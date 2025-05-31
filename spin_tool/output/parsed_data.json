@@ -1,0 +1,200 @@
+{
+  "trail": [
+    {
+      "step": 1,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 24,
+      "action": "Executed line 24"
+    },
+    {
+      "step": 2,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 25,
+      "action": "Executed line 25"
+    },
+    {
+      "step": 3,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 26,
+      "action": "Executed line 26"
+    },
+    {
+      "step": 4,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 27,
+      "action": "Executed line 27"
+    },
+    {
+      "step": 5,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 28,
+      "action": "Executed line 28"
+    },
+    {
+      "step": 6,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 29,
+      "action": "Executed line 29"
+    },
+    {
+      "step": 7,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 30,
+      "action": "Executed line 30"
+    },
+    {
+      "step": 8,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 31,
+      "action": "Executed line 31"
+    },
+    {
+      "step": 9,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 32,
+      "action": "Executed line 32"
+    },
+    {
+      "step": 10,
+      "proc_id": 0,
+      "proc_name": "Process_0",
+      "line": 33,
+      "action": "Executed line 33"
+    },
+    {
+      "step": 11,
+      "proc_id": 1,
+      "proc_name": "Process_1",
+      "line": 0,
+      "action": "Executed line 0"
+    },
+    {
+      "step": 12,
+      "proc_id": 1,
+      "proc_name": "Process_1",
+      "line": 1,
+      "action": "Executed line 1"
+    },
+    {
+      "step": 13,
+      "proc_id": 2,
+      "proc_name": "Process_2",
+      "line": 0,
+      "action": "Executed line 0"
+    },
+    {
+      "step": 14,
+      "proc_id": 2,
+      "proc_name": "Process_2",
+      "line": 1,
+      "action": "Executed line 1"
+    },
+    {
+      "step": 15,
+      "proc_id": 3,
+      "proc_name": "Process_3",
+      "line": 18,
+      "action": "Executed line 18"
+    },
+    {
+      "step": 16,
+      "proc_id": 3,
+      "proc_name": "Process_3",
+      "line": 19,
+      "action": "Executed line 19"
+    },
+    {
+      "step": 17,
+      "proc_id": 2,
+      "proc_name": "Process_2",
+      "line": 2,
+      "action": "Executed line 2"
+    },
+    {
+      "step": 18,
+      "proc_id": 3,
+      "proc_name": "Process_3",
+      "line": 20,
+      "action": "Executed line 20"
+    },
+    {
+      "step": 19,
+      "proc_id": 3,
+      "proc_name": "Process_3",
+      "line": 23,
+      "action": "Executed line 23"
+    },
+    {
+      "step": 20,
+      "proc_id": 2,
+      "proc_name": "Process_2",
+      "line": 3,
+      "action": "Executed line 3"
+    },
+    {
+      "step": 21,
+      "proc_id": 3,
+      "proc_name": "Process_3",
+      "line": 18,
+      "action": "Executed line 18"
+    },
+    {
+      "step": 22,
+      "proc_id": 3,
+      "proc_name": "Process_3",
+      "line": 19,
+      "action": "Executed line 19"
+    },
+    {
+      "step": 23,
+      "proc_id": 2,
+      "proc_name": "Process_2",
+      "line": 4,
+      "action": "Executed line 4"
+    },
+    {
+      "step": 24,
+      "proc_id": 3,
+      "proc_name": "Process_3",
+      "line": 20,
+      "action": "Executed line 20"
+    },
+    {
+      "step": 25,
+      "proc_id": 3,
+      "proc_name": "Process_3",
+      "line": 23,
+      "action": "Executed line 23"
+    },
+    {
+      "step": 26,
+      "proc_id": 2,
+      "proc_name": "Process_2",
+      "line": 11,
+      "action": "Executed line 11"
+    }
+  ],
+  "errors": [
+    {
+      "type": "assertion violated",
+      "message": "pan:1: assertion violated (rgt!=0) (at depth 25)",
+      "depth": 25,
+      "step": null
+    },
+    {
+      "type": "invalid end state",
+      "message": "invalid end states\t+",
+      "depth": null,
+      "step": null
+    }
+  ]
+}

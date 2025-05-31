@@ -1,0 +1,155 @@
+{
+  "processes": {
+    "0": "proc_0",
+    "1": "calc",
+    "2": "calc",
+    "3": "calc",
+    "4": "calc"
+  },
+  "events": [
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!operator,43"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!operator,47"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!value,84"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!value,0"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!operator,45"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!value,36"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!operator,42"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!value,3"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "f!value,4"
+    },
+    {
+      "type": "create",
+      "from": 0,
+      "to": 1,
+      "label": "run calc"
+    },
+    {
+      "type": "action",
+      "pid": 0,
+      "label": "(run calc(me))"
+    },
+    {
+      "type": "action",
+      "pid": 1,
+      "label": "f?operator,s"
+    },
+    {
+      "type": "create",
+      "from": 1,
+      "to": 2,
+      "label": "run calc"
+    },
+    {
+      "type": "action",
+      "pid": 1,
+      "label": "(run calc(me))"
+    },
+    {
+      "type": "action",
+      "pid": 2,
+      "label": "f?operator,s"
+    },
+    {
+      "type": "create",
+      "from": 2,
+      "to": 3,
+      "label": "run calc"
+    },
+    {
+      "type": "action",
+      "pid": 2,
+      "label": "(run calc(me))"
+    },
+    {
+      "type": "action",
+      "pid": 3,
+      "label": "f?value,s"
+    },
+    {
+      "type": "action",
+      "pid": 3,
+      "label": "you!s"
+    },
+    {
+      "type": "action",
+      "pid": 2,
+      "label": "me?lft"
+    },
+    {
+      "type": "create",
+      "from": 2,
+      "to": 4,
+      "label": "run calc"
+    },
+    {
+      "type": "action",
+      "pid": 2,
+      "label": "(run calc(me))"
+    },
+    {
+      "type": "action",
+      "pid": 3,
+      "label": "(1)"
+    },
+    {
+      "type": "action",
+      "pid": 4,
+      "label": "f?value,s"
+    },
+    {
+      "type": "action",
+      "pid": 4,
+      "label": "you!s"
+    },
+    {
+      "type": "action",
+      "pid": 2,
+      "label": "me?rgt"
+    },
+    {
+      "type": "action",
+      "pid": 4,
+      "label": "(1)"
+    },
+    {
+      "type": "action",
+      "pid": 2,
+      "label": "((s==47))"
+    }
+  ]
+}
