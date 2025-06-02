@@ -11,7 +11,6 @@ def load_msc_json(json_path):
         data = json.load(f)
     proc_names = data.get('processes', {})
     events = data.get('events', [])
-    # Convert proc names keys to int if needed (some JSON serializers convert keys to strings)
     proc_names = {int(k): v for k, v in proc_names.items()}
     return proc_names, events
 
@@ -21,23 +20,19 @@ def build_msc_graph(proc_names, events):
     dot.attr(rankdir='TB', fontsize='10')  # Top-to-bottom layout for MSC
     dot.attr('node', shape='rectangle', style='filled', fillcolor='lightgray', fontsize='10', fontname='Arial', fixedsize='false')
 
-    # Create lifeline headers
     for pid, pname in sorted(proc_names.items()):
         label = f"{pid}: {pname}"
         dot.node(f"proc_{pid}_head", label)
 
-    # Lifeline vertical lines - create invisible nodes to guide rank
     for pid in proc_names.keys():
         dot.node(f"proc_{pid}_line", label='', shape='point', width='0.01', height='0.01', style='invis')
 
-    # Position lifeline headers and lines horizontally
     with dot.subgraph() as s:
         s.attr(rank='same')
         for pid in proc_names.keys():
             s.node(f"proc_{pid}_head")
             s.node(f"proc_{pid}_line")
 
-    # Track vertical position of each process (to place events in order)
     last_event_node = {}
 
     event_count = 0
@@ -48,7 +43,6 @@ def build_msc_graph(proc_names, events):
             dst = evt['to']   # Corrected: use 'to' key
             label = evt['label'] # Corrected: use 'label' key
 
-            # Create edge representing process creation (dashed)
             dot.edge(f"proc_{src}_line", f"proc_{dst}_head", label=label, style='dashed', fontsize='8')
 
         elif evt['type'] == 'action':
@@ -58,16 +52,13 @@ def build_msc_graph(proc_names, events):
             node_id = f"evt_{pid}_{event_count}"
             dot.node(node_id, label=action, shape='box', style='rounded,filled', fillcolor='white', fontsize='9', fontname='Arial')
 
-            # Link event vertically on lifeline
             if pid in last_event_node:
                 dot.edge(last_event_node[pid], node_id, style='solid', arrowhead='none')
             else:
-                # Connect first event to lifeline head
                 dot.edge(f"proc_{pid}_head", node_id, style='solid', arrowhead='none')
 
             last_event_node[pid] = node_id
 
-    # Add lifeline vertical dotted lines for each process from head to last event
     for pid in proc_names.keys():
         start = f"proc_{pid}_head"
         end = last_event_node.get(pid, start)

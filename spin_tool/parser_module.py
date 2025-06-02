@@ -51,12 +51,9 @@ def parse_pan_out(pan_path):
 
             match = error_pattern.search(line)
             if match:
-                # Extract error type from matched group 2
                 err_type = match.group(2).lower()
-                # Full error message trimmed
                 msg = line
 
-                # Try to extract depth or step info
                 depth = None
                 step_num = None
                 depth_match = re.search(r'at depth (\d+)', line, re.IGNORECASE)
@@ -76,9 +73,6 @@ def parse_pan_out(pan_path):
     return errors
 
 
-# ----------------------------
-# Output as JSON
-# ----------------------------
 
 def save_parsed_output(parsed_trail, parsed_errors, out_path="output/parsed_data.json"):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -112,7 +106,6 @@ def parse_msc_txt(txt_path):
     with open(txt_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Βρες το μπλοκ μεταξύ ===start Sim=== και ===end Sim===
     match = re.search(r'===start Sim===(.*?)===end Sim===', content, re.DOTALL)
     if not match:
         print("No simulation block found in txt file")
@@ -122,9 +115,7 @@ def parse_msc_txt(txt_path):
     proc_names = {}
     events = []
 
-    # regex για create events
     create_re = re.compile(r'proc\s+(\d+)\s+\([^)]+\)\s+creates proc\s+(\d+)\s+\(([^)]+)\)')
-    # regex για ενέργειες με actions
     action_re = re.compile(r'proc\s+(\d+)\s+\([^)]+\)\s+([^\[]+)\[(.+)\]')
 
     for line in sim_block.strip().splitlines():
@@ -147,7 +138,6 @@ def parse_msc_txt(txt_path):
             if m:
                 pid = int(m.group(1))
                 action_raw = m.group(3).strip()
-                # Καταχώρησε το όνομα της διαδικασίας
                 if pid not in proc_names:
                     proc_names[pid] = f"proc_{pid}"
                 events.append({
@@ -156,7 +146,6 @@ def parse_msc_txt(txt_path):
                     'label': action_raw
                 })
 
-    # Επέστρεψε ως dict το proc_names και τη λίστα των events
     return proc_names, events
 
 def save_msc_json(proc_names, events, out_path="output/msc_data.json"):
@@ -171,9 +160,6 @@ def save_msc_json(proc_names, events, out_path="output/msc_data.json"):
     print(f"Saved MSC JSON data to {abs_out_path}")
 
 
-# ----------------------------
-# CLI Entrypoint
-# ----------------------------
 
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -189,18 +175,17 @@ def main():
         raise FileNotFoundError("No .out file found in /data")
     pan_path = os.path.join(data_dir, out_files[0])
     
-    trail_data = parse_trail_file(trail_path)   # use local var trail_path
-    error_data = parse_pan_out(pan_path)        # use local var pan_path
+    trail_data = parse_trail_file(trail_path)   
+    error_data = parse_pan_out(pan_path)        
 
     txt_path = convert_isf_to_txt(data_dir)
     if txt_path:
-        # Κάνε parse το MSC TXT για να βγάλεις JSON
         proc_names, events = parse_msc_txt(txt_path)
         save_msc_json(proc_names, events)
     else:
         print("No .txt file for MSC parsing.")
 
-    save_parsed_output(trail_data, error_data)  # save trail & pan data as usual
+    save_parsed_output(trail_data, error_data)
 
 if __name__ == '__main__':
     main()

@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QColor, QFont, QAction
 from PyQt6.QtCore import Qt
 
+
 DATA_DIR = "data"
 
 class StepDetailDialog(QMessageBox):
@@ -35,10 +36,8 @@ class SpinVisualizer(QWidget):
         self.load_pml_lines()
 
 
-        # Parse errors into dict with optional step info
         self.errors = []
         for err in self.errors_raw:
-            # If error is string, try to parse step number
             if isinstance(err, str):
                 step = None
                 match = re.search(r"step\s*(\d+)", err, re.IGNORECASE)
@@ -52,7 +51,6 @@ class SpinVisualizer(QWidget):
 
         layout = QVBoxLayout()
 
-        # Search bar and export buttons
         search_layout = QHBoxLayout()
         search_label = QLabel("Search:")
         self.search_input = QLineEdit()
@@ -61,7 +59,6 @@ class SpinVisualizer(QWidget):
         search_layout.addWidget(search_label)
         search_layout.addWidget(self.search_input)
 
-        # Export buttons
         self.export_csv_btn = QPushButton("Export CSV")
         self.export_csv_btn.clicked.connect(self.export_csv)
         self.export_html_btn = QPushButton("Export HTML")
@@ -71,10 +68,8 @@ class SpinVisualizer(QWidget):
 
         layout.addLayout(search_layout)
 
-        # Splitter to separate timeline table and errors/context
         splitter = QSplitter(Qt.Orientation.Vertical)
 
-        # Timeline Table
         self.table = QTableWidget()
         self.table.setSortingEnabled(True)
         self.table.setColumnCount(5)
@@ -84,48 +79,53 @@ class SpinVisualizer(QWidget):
 
         splitter.addWidget(self.table)
 
-        # Bottom widget for errors and context
         bottom_widget = QWidget()
         bottom_layout = QVBoxLayout()
+        bottom_layout.setContentsMargins(0, 0, 0, 0)
+        bottom_layout.setSpacing(4)
 
-        # Error list widget
         self.error_list = QListWidget()
-        self.error_list.setMaximumHeight(150)
+        self.error_list.setMaximumHeight(100)
+
         error_label = QLabel("Errors Detected:")
         error_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        error_label.setStyleSheet("color: red;")
+        error_label.setStyleSheet("color: red; margin-bottom: 4px;")
+
         bottom_layout.addWidget(error_label)
         bottom_layout.addWidget(self.error_list)
-
-        # Error message display
-        self.error_text = QTextEdit()
-        self.error_text.setReadOnly(True)
-        self.error_text.setStyleSheet("background: #ffeeee; color: darkred; font-family: Consolas;")
-        self.error_text.setFixedHeight(100)
-        bottom_layout.addWidget(self.error_text)
 
         bottom_widget.setLayout(bottom_layout)
         splitter.addWidget(bottom_widget)
 
         layout.addWidget(splitter, stretch=1)
         self.setLayout(layout)
+        
+        splitter.setStretchFactor(0, 4)
+        splitter.setStretchFactor(1, 1)
 
         self.load_data()
         self.populate_error_list()
 
-        self.error_list.currentItemChanged.connect(self.on_error_selected)
 
     def load_data(self):
         self.table.setRowCount(len(self.trail))
 
         colors = [
-            QColor("#FFDDC1"),
-            QColor("#C1FFD7"),
-            QColor("#C1D4FF"),
-            QColor("#FFD1DC"),
-            QColor("#E6E6FA"),
-            QColor("#FFFACD"),
-            QColor("#D1FFD6"),
+            QColor("#FFC79A"),
+            QColor("#83D9A1"),
+            QColor("#677697"),
+            QColor("#CE909E"),
+            QColor("#626274"),
+            QColor("#FFF278"),
+            QColor("#4DCC5C"),
+            QColor("#15B4AC"),
+            QColor("#F56F6F"),
+            QColor("#AD6ACA"),
+            QColor("#175B1E"),
+            QColor("#D47A1A"),
+            QColor("#0B5D43"),  
+            QColor("#7EFFC7"),      
+            QColor("#D4CE1A"),
         ]
 
         for row, step in enumerate(self.trail):
@@ -141,13 +141,6 @@ class SpinVisualizer(QWidget):
             pml_line = self.get_pml_line(step.get("line", 0))
             self.table.setItem(row, 4, QTableWidgetItem(pml_line))
 
-        # Populate error text with all errors
-        if self.errors:
-            # Show combined raw messages
-            error_messages = [err["message"] for err in self.errors]
-            self.error_text.setPlainText("\n".join(error_messages))
-        else:
-            self.error_text.setPlainText("No errors detected.")
 
     def find_pml_file(self):
         for filename in os.listdir(DATA_DIR):
@@ -258,13 +251,6 @@ class SpinVisualizer(QWidget):
             item_text = f"{step_info}: {err['message'][:80]}{'...' if len(err['message']) > 80 else ''}"
             self.error_list.addItem(item_text)
 
-    def on_error_selected(self, current, previous):
-        if current is None:
-            self.error_text.clear()
-            return
-        idx = self.error_list.currentRow()
-        err = self.errors[idx]
-        self.error_text.setPlainText(err["message"])
 
 
 if __name__ == "__main__":
