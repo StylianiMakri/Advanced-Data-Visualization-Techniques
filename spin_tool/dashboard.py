@@ -83,7 +83,7 @@ class Dashboard(QWidget):
         self.run_script("vizualizer_module_3.py")
 
     def run_sequence(self):
-        self.run_script("sequence_module.py")
+        self.run_script("timeline_evolved.py")
 
     def run_msc_maker(self):
         script_name = "msc_maker.py"
