@@ -65,7 +65,7 @@ class Dashboard(QWidget):
         for file in files:
             try:
                 shutil.copy(file, DATA_DIR)
-                print(f"Copied: {file} to {DATA_DIR}")  # Add debug print
+                print(f"Copied: {file} to {DATA_DIR}") 
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Could not copy file: {e}")
         QMessageBox.information(self, "Success", "Files uploaded to 'data folder'")

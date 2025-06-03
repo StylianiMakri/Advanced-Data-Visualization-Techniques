@@ -17,7 +17,7 @@ def load_msc_json(json_path):
 
 def build_msc_graph(proc_names, events):
     dot = Digraph(engine='dot')
-    dot.attr(rankdir='TB', fontsize='10')  # Top-to-bottom layout for MSC
+    dot.attr(rankdir='TB', fontsize='10')  # Top to bottom layout
     dot.attr('node', shape='rectangle', style='filled', fillcolor='lightgray', fontsize='10', fontname='Arial', fixedsize='false')
 
     for pid, pname in sorted(proc_names.items()):
@@ -39,15 +39,15 @@ def build_msc_graph(proc_names, events):
     for evt in events:
         event_count += 1
         if evt['type'] == 'create':
-            src = evt['from'] # Corrected: use 'from' key
-            dst = evt['to']   # Corrected: use 'to' key
-            label = evt['label'] # Corrected: use 'label' key
+            src = evt['from'] 
+            dst = evt['to']   
+            label = evt['label'] 
 
             dot.edge(f"proc_{src}_line", f"proc_{dst}_head", label=label, style='dashed', fontsize='8')
 
         elif evt['type'] == 'action':
             pid = evt['pid']
-            action = evt['label'] # Corrected: use 'label' key
+            action = evt['label'] 
 
             node_id = f"evt_{pid}_{event_count}"
             dot.node(node_id, label=action, shape='box', style='rounded,filled', fillcolor='white', fontsize='9', fontname='Arial')

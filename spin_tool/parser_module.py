@@ -1,13 +1,10 @@
-# spin_visualizer.py - Initial draft of the SPIN output visualizer tool
+
 
 import os
 import re
 import json
 from collections import defaultdict
 
-# ----------------------------
-# Parser Module - Trail & PAN
-# ----------------------------
 
 def parse_trail_file(trail_path):
     steps = []

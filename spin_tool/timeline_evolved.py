@@ -57,15 +57,15 @@ class TimelineViewer(QMainWindow):
         main_widget = QWidget()
         main_layout = QVBoxLayout()
 
-        # Container for the canvas with fixed minimum width
+
         canvas_container = QWidget()
         canvas_layout = QVBoxLayout()
         self.canvas = TimelineCanvas(trail_data)
-        self.canvas.setMinimumWidth(2000)  # Force horizontal scroll if needed
+        self.canvas.setMinimumWidth(2000)  
         canvas_layout.addWidget(self.canvas)
         canvas_container.setLayout(canvas_layout)
 
-        # Scroll area wraps the container
+        
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(canvas_container)

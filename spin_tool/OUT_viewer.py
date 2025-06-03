@@ -105,7 +105,7 @@ class ExpandableSection(QGroupBox):
         self.text_area.setReadOnly(True)
         self.text_area.setPlainText(content_text)
         self.text_area.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-        self.text_area.setMaximumHeight(150)  # Limit height
+        self.text_area.setMaximumHeight(150)  
 
         layout.addWidget(self.text_area)
         self.setLayout(layout)
@@ -141,18 +141,18 @@ class SpinOutViewer(QWidget):
         else:
             parsed_data = parse_spin_output(out_file)
 
-            # Prepare display texts per section
+            
             self.sections = {}
 
             sections_data = {}
 
-            # Compilation Commands
+            
             sections_data["Compilation Commands"] = "\n".join(parsed_data["Compilation Commands"]) or "None"
 
-            # Settings Used
+            
             sections_data["Settings Used"] = "\n".join(parsed_data["Settings Used"]) or "None"
 
-            # Verification Checks
+            
             if parsed_data["Verification Checks"]:
                 checks_lines = []
                 for k, v in parsed_data["Verification Checks"].items():
@@ -162,7 +162,7 @@ class SpinOutViewer(QWidget):
             else:
                 sections_data["Verification Checks"] = "None"
 
-            # Statespace Stats
+            
             if parsed_data["Statespace Stats"]:
                 stats_lines = []
                 for k, v in parsed_data["Statespace Stats"].items():
@@ -171,7 +171,7 @@ class SpinOutViewer(QWidget):
             else:
                 sections_data["Statespace Stats"] = "None"
 
-            # Memory Usage
+            
             if parsed_data["Memory Usage"]:
                 mem_lines = []
                 for k, v in parsed_data["Memory Usage"].items():
@@ -180,13 +180,13 @@ class SpinOutViewer(QWidget):
             else:
                 sections_data["Memory Usage"] = "None"
 
-            # Unreached Code
+            
             sections_data["Unreached Code"] = "\n".join(parsed_data["Unreached Code"]) or "None"
 
-            # Elapsed Time
+            
             sections_data["Elapsed Time"] = parsed_data["Elapsed Time"] or "Unknown"
 
-            # Final Status
+            
             sections_data["Final Status"] = parsed_data["Final Status"] or "Unknown"
 
             scroll = QScrollArea()
@@ -203,7 +203,7 @@ class SpinOutViewer(QWidget):
             scroll.setWidget(content_widget)
             main_layout.addWidget(scroll)
 
-            # Connect buttons
+            
             self.open_all_btn.clicked.connect(self.open_all)
             self.close_all_btn.clicked.connect(self.close_all)
 
