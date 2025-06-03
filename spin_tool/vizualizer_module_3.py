@@ -99,7 +99,7 @@ class SpinVisualizer(QWidget):
 
         layout.addWidget(splitter, stretch=1)
         self.setLayout(layout)
-        
+
         splitter.setStretchFactor(0, 4)
         splitter.setStretchFactor(1, 1)
 

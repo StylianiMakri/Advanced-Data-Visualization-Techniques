@@ -43,6 +43,14 @@ class Dashboard(QWidget):
         self.msc_maker_button.clicked.connect(self.run_msc_maker)
         self.layout.addWidget(self.msc_maker_button)
 
+        self.overview_btn = QPushButton("Run Overview Module")
+        self.overview_btn.clicked.connect(self.run_overview)
+        self.layout.addWidget(self.overview_btn)
+
+        self.OUT_btn = QPushButton("Run .out viewer Module")
+        self.OUT_btn.clicked.connect(self.run_OUT)
+        self.layout.addWidget(self.OUT_btn)
+
         
 
     def upload_files(self):
@@ -64,6 +72,12 @@ class Dashboard(QWidget):
 
     def run_parser(self):
         self.run_script("parser_module.py")
+
+    def run_overview(self):
+        self.run_script("overview.py")
+
+    def run_OUT(self):
+        self.run_script("OUT_viewer.py")
 
     def run_visualizer(self):
         self.run_script("vizualizer_module_3.py")
