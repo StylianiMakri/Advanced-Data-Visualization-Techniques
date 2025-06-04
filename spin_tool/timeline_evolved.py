@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 class TimelineCanvas(FigureCanvas):
     def __init__(self, trail_data):
-        self.fig = Figure(figsize=(30, 6))  # Wide initial figure for scrolling
+        self.fig = Figure(figsize=(30, 6))
         super().__init__(self.fig)
         self.ax = self.fig.add_subplot(111)
         self.trail_data = trail_data

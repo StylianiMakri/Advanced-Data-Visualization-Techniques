@@ -1,0 +1,605 @@
+Fname	eratosthenes_mockerror.pml
+===start Model Spec===
+1	/*
+2		The Sieve of Eratosthenes (c. 276-196 BC)
+3		Prints all prime numbers up to MAX
+4	*/
+5	#define MAX	25
+6	
+7	mtype = { number, eof };
+8	
+9	chan root = [0] of { mtype, int };
+10	
+11	proctype sieve(chan c; int prime)
+12	{	chan child = [0] of { mtype, int };
+13		bool haschild;
+14		int n;
+15	
+16		printf("MSC: %d is prime\n", prime);
+17	end:	do
+18		:: c?number(n) ->
+19			if
+20			:: (n%prime) == 0 ->
+21				printf("MSC: %d = %d*%d\n", n, prime, n/prime)
+22			:: else ->
+23				if
+24				:: !haschild ->	/* new prime */
+25					haschild = true;
+26					run sieve(child, n);
+27				:: else ->
+28					child!number(n)
+29				fi;
+30			fi
+31	    		/* Mock error injection */
+32	    		if
+33	    		:: (n == 23) -> assert(false) /* Force assertion failure */
+34	    		:: else -> skip
+35	    		fi
+36		:: c?eof(0) ->
+37			break
+38		od;
+39		if
+40		:: haschild ->
+41			child!eof(0)
+42		:: else
+43		fi
+44	}
+45	
+46	init
+47	{	int n = 2;
+48	
+49		run sieve(root, n);
+50		do
+51		:: (n <  MAX) -> n++; root!number(n)
+52		:: (n >= MAX) -> root!eof(0); break
+53		od
+54	}
+
+
+===end Model Spec===
+===start Model Log===
+Spin Version 6.5.2 -- 21 June 2024
+iSpin Version 1.1.5 -- 28 May 2021
+TclTk Version 8.6/8.6
+1 /cygdrive/c/Users/stell/Desktop/Spin-master/Examples/eratosthenes_mockerror.pml:1
+2 <saved eratosthenes_mockerror.pml>
+3 simulate/replay
+4 verification
+5 simulate/replay
+
+
+===end Model Log===
+Seed	123
+Trail	eratosthenes_mockerror.pml.trail
+SkipStep	0
+MaxStep	10000
+VarVals	1
+FullQ	0
+MSC_Full	0
+MaxText	20
+Delay	25
+Pids	
+Qids	
+Vars	
+Track	
+Scale	
+===start Data===
+[variable values, step 381]
+
+ :init:(0):n  =  24
+ MSC: 10  =  2*5
+ MSC: 12  =  2*6
+ MSC: 14  =  2*7
+ MSC: 15  =  3*5
+ MSC: 16  =  2*8
+ MSC: 18  =  2*9
+ MSC: 20  =  2*10
+ MSC: 21  =  3*7
+ MSC: 22  =  2*11
+ MSC: 4  =  2*2
+ MSC: 6  =  2*3
+ MSC: 8  =  2*4
+ MSC: 9  =  3*3
+ sieve(1):haschild  =  1
+ sieve(1):n  =  23
+ sieve(1):prime  =  2
+ sieve(2):haschild  =  1
+ sieve(2):n  =  23
+ sieve(2):prime  =  3
+ sieve(3):haschild  =  1
+ sieve(3):n  =  23
+ sieve(3):prime  =  5
+ sieve(4):haschild  =  1
+ sieve(4):n  =  19
+ sieve(4):prime  =  7
+ sieve(5):haschild  =  1
+ sieve(5):n  =  19
+ sieve(5):prime  =  11
+ sieve(6):haschild  =  1
+ sieve(6):n  =  19
+ sieve(6):prime  =  13
+ sieve(7):haschild  =  1
+ sieve(7):n  =  19
+ sieve(7):prime  =  17
+
+
+===end Data===
+===start Sim===
+  0:	proc  - (:root:) creates proc  0 (:init:)
+Starting sieve with pid 1
+  1:	proc  0 (:init::1) creates proc  1 (sieve)
+  1:	proc  0 (:init::1) eratosthenes_mockerror.pml:49 (state 1)	[(run sieve(root,n))]
+MSC: 2 is prime
+  2:	proc  1 (sieve:1) eratosthenes_mockerror.pml:16 (state 1)	[printf('MSC: %d is prime\\n',prime)]
+  5:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+  6:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+  7:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+  7:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+  8:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+  9:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+ 10:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+ 11:	proc  1 (sieve:1) eratosthenes_mockerror.pml:24 (state 6)	[(!(haschild))]
+ 12:	proc  1 (sieve:1) eratosthenes_mockerror.pml:25 (state 7)	[haschild = 1]
+Starting sieve with pid 2
+ 13:	proc  1 (sieve:1) creates proc  2 (sieve)
+ 13:	proc  1 (sieve:1) eratosthenes_mockerror.pml:26 (state 8)	[(run sieve(child,n))]
+MSC: 3 is prime
+ 15:	proc  2 (sieve:1) eratosthenes_mockerror.pml:16 (state 1)	[printf('MSC: %d is prime\\n',prime)]
+ 17:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 18:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 19:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+ 19:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 20:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+ 21:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+ 23:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+ 24:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+ 26:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 27:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 28:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+ 28:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 29:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+ 30:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+ 31:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+ 32:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+ 33:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+ 33:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 34:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 35:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 38:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+ 38:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 39:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+ 40:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+ 41:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+ 42:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+ 44:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 45:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 48:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+ 48:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 49:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+ 50:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+ 51:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+ 52:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+ 53:	proc  2 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+ 54:	proc  2 (sieve:1) eratosthenes_mockerror.pml:24 (state 6)	[(!(haschild))]
+ 55:	proc  2 (sieve:1) eratosthenes_mockerror.pml:25 (state 7)	[haschild = 1]
+Starting sieve with pid 3
+ 56:	proc  2 (sieve:1) creates proc  3 (sieve)
+ 56:	proc  2 (sieve:1) eratosthenes_mockerror.pml:26 (state 8)	[(run sieve(child,n))]
+MSC: 5 is prime
+ 57:	proc  3 (sieve:1) eratosthenes_mockerror.pml:16 (state 1)	[printf('MSC: %d is prime\\n',prime)]
+ 61:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 62:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 63:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+ 63:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 64:	proc  2 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+ 65:	proc  2 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+ 66:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 67:	proc  2 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+ 67:	proc  3 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 68:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 69:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 72:	proc  3 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+ 73:	proc  3 (sieve:1) eratosthenes_mockerror.pml:24 (state 6)	[(!(haschild))]
+ 74:	proc  3 (sieve:1) eratosthenes_mockerror.pml:25 (state 7)	[haschild = 1]
+Starting sieve with pid 4
+ 75:	proc  3 (sieve:1) creates proc  4 (sieve)
+ 75:	proc  3 (sieve:1) eratosthenes_mockerror.pml:26 (state 8)	[(run sieve(child,n))]
+ 76:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+ 76:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 77:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+ 79:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+ 81:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+MSC: 7 is prime
+ 82:	proc  4 (sieve:1) eratosthenes_mockerror.pml:16 (state 1)	[printf('MSC: %d is prime\\n',prime)]
+ 83:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 84:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 86:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 88:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+ 93:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+ 94:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+ 95:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+ 95:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+ 96:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+ 97:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+ 98:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+ 99:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+100:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+100:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+101:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+102:	proc  2 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+103:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+104:	proc  2 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+105:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+105:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+106:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+107:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+109:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+110:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+111:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+112:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+114:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+116:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+117:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+117:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+119:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+120:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+121:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+122:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+123:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+123:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+124:	proc  2 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+125:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+126:	proc  2 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+127:	proc  2 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+127:	proc  3 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+128:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+129:	proc  3 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+130:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+130:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+131:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+132:	proc  3 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+133:	proc  3 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+133:	proc  4 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+134:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+135:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+136:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+137:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+138:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+139:	proc  4 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+140:	proc  4 (sieve:1) eratosthenes_mockerror.pml:24 (state 6)	[(!(haschild))]
+142:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+146:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+147:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+148:	proc  4 (sieve:1) eratosthenes_mockerror.pml:25 (state 7)	[haschild = 1]
+Starting sieve with pid 5
+149:	proc  4 (sieve:1) creates proc  5 (sieve)
+149:	proc  4 (sieve:1) eratosthenes_mockerror.pml:26 (state 8)	[(run sieve(child,n))]
+150:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+MSC: 11 is prime
+151:	proc  5 (sieve:1) eratosthenes_mockerror.pml:16 (state 1)	[printf('MSC: %d is prime\\n',prime)]
+153:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+153:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+154:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+155:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+157:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+158:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+159:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+159:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+160:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+161:	proc  2 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+162:	proc  2 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+163:	proc  2 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+163:	proc  3 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+165:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+168:	proc  3 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+169:	proc  4 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+170:	proc  3 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+172:	proc  4 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+173:	proc  3 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+173:	proc  4 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+174:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+174:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+175:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+176:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+177:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+178:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+179:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+180:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+181:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+183:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+186:	proc  4 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+187:	proc  4 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+188:	proc  4 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+188:	proc  5 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+189:	proc  5 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+191:	proc  4 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+192:	proc  4 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+194:	proc  5 (sieve:1) eratosthenes_mockerror.pml:24 (state 6)	[(!(haschild))]
+196:	proc  5 (sieve:1) eratosthenes_mockerror.pml:25 (state 7)	[haschild = 1]
+Starting sieve with pid 6
+197:	proc  5 (sieve:1) creates proc  6 (sieve)
+197:	proc  5 (sieve:1) eratosthenes_mockerror.pml:26 (state 8)	[(run sieve(child,n))]
+200:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+201:	proc  5 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+202:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+204:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+204:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+205:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+MSC: 13 is prime
+206:	proc  6 (sieve:1) eratosthenes_mockerror.pml:16 (state 1)	[printf('MSC: %d is prime\\n',prime)]
+207:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+208:	proc  5 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+211:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+212:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+214:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+214:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+215:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+216:	proc  2 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+217:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+218:	proc  2 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+220:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+220:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+221:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+223:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+224:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+225:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+229:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+230:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+232:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+234:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+235:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+235:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+236:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+237:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+238:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+239:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+239:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+240:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+241:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+242:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+243:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+243:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+244:	proc  2 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+245:	proc  2 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+246:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+247:	proc  2 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+247:	proc  3 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+248:	proc  3 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+249:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+250:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+251:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+252:	proc  3 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+253:	proc  3 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+253:	proc  4 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+255:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+256:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+258:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+259:	proc  4 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+260:	proc  4 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+261:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+265:	proc  4 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+265:	proc  5 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+266:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+267:	proc  4 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+268:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+269:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+269:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+270:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+271:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+272:	proc  4 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+273:	proc  5 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+274:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+275:	proc  5 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+276:	proc  5 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+276:	proc  6 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+277:	proc  5 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+278:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+278:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+279:	proc  6 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+280:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+281:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+282:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+283:	proc  5 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+284:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+284:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+285:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+286:	proc  6 (sieve:1) eratosthenes_mockerror.pml:24 (state 6)	[(!(haschild))]
+291:	proc  6 (sieve:1) eratosthenes_mockerror.pml:25 (state 7)	[haschild = 1]
+Starting sieve with pid 7
+292:	proc  6 (sieve:1) creates proc  7 (sieve)
+292:	proc  6 (sieve:1) eratosthenes_mockerror.pml:26 (state 8)	[(run sieve(child,n))]
+293:	proc  2 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+MSC: 17 is prime
+294:	proc  7 (sieve:1) eratosthenes_mockerror.pml:16 (state 1)	[printf('MSC: %d is prime\\n',prime)]
+295:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+298:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+300:	proc  6 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+301:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+302:	proc  6 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+304:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+305:	proc  2 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+306:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+308:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+308:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+309:	proc  2 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+309:	proc  3 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+310:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+311:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+312:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+313:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+314:	proc  3 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+315:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+318:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+319:	proc  3 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+321:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+321:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+323:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+324:	proc  3 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+324:	proc  4 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+325:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+326:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+327:	proc  4 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+328:	proc  2 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+329:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+329:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+330:	proc  1 (sieve:1) eratosthenes_mockerror.pml:20 (state 3)	[(((n%prime)==0))]
+331:	proc  1 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+332:	proc  4 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+334:	proc  4 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+334:	proc  5 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+335:	proc  3 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+336:	proc  4 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+337:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+338:	proc  5 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+339:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+340:	proc  5 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+341:	proc  4 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+343:	proc  5 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+343:	proc  6 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+344:	proc  6 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+345:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+346:	proc  2 (sieve:1) eratosthenes_mockerror.pml:21 (state 4)	[printf('MSC: %d = %d*%d\\n',n,prime,(n/prime))]
+347:	proc  6 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+348:	proc  6 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+348:	proc  7 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+350:	proc  1 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+353:	proc  6 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+354:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)	[root!number,n]
+354:	proc  1 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+355:	proc  1 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+356:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 2)	[((n<25))]
+357:	proc  5 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+360:	proc  7 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+361:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 17)	[else]
+362:	proc  1 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+363:	proc  6 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+364:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 3)	[n = (n+1)]
+365:	proc  7 (sieve:1) eratosthenes_mockerror.pml:24 (state 6)	[(!(haschild))]
+366:	proc  2 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+368:	proc  5 (sieve:1) eratosthenes_mockerror.pml:34 (state 18)	[(1)]
+372:	proc  7 (sieve:1) eratosthenes_mockerror.pml:25 (state 7)	[haschild = 1]
+373:	proc  1 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+373:	proc  2 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+375:	proc  2 (sieve:1) eratosthenes_mockerror.pml:22 (state 5)	[else]
+376:	proc  2 (sieve:1) eratosthenes_mockerror.pml:27 (state 9)	[else]
+377:	proc  1 (sieve:1) eratosthenes_mockerror.pml:33 (state 15)	[((n==23))]
+378:	proc  2 (sieve:1) eratosthenes_mockerror.pml:28 (state 10)	[child!number,n]
+378:	proc  3 (sieve:1) eratosthenes_mockerror.pml:18 (state 2)	[c?number,n]
+379:	proc  2 (sieve:1) eratosthenes_mockerror.pml:33 (state 15)	[((n==23))]
+spin: eratosthenes_mockerror.pml:33, Error: assertion violated
+spin: text of failed assertion: assert(0)
+#processes: 8
+381:	proc  7 (sieve:1) eratosthenes_mockerror.pml:26 (state 8)
+381:	proc  6 (sieve:1) eratosthenes_mockerror.pml:17 (state 23)
+381:	proc  5 (sieve:1) eratosthenes_mockerror.pml:17 (state 23)
+381:	proc  4 (sieve:1) eratosthenes_mockerror.pml:17 (state 23)
+381:	proc  3 (sieve:1) eratosthenes_mockerror.pml:19 (state 13)
+381:	proc  2 (sieve:1) eratosthenes_mockerror.pml:33 (state 16)
+381:	proc  1 (sieve:1) eratosthenes_mockerror.pml:33 (state 16)
+381:	proc  0 (:init::1) eratosthenes_mockerror.pml:51 (state 4)
+8 processes created
+
+
+===end Sim===
+===start Queues===
+Queues
+
+===end Queues===
+LTL_Panel	0
+a_mode	1
+bc_mode	0
+bc_bound	0
+bf_mode	0
+c_mode	0
+cc_mode	0
+e_mode	1
+estop		0
+f_mode	0
+it_mode	0
+ma_mode	0
+p_mode	0
+peg		0
+po_mode	1
+q_mode	0
+s_mode	0
+sv_mode	0
+u_mode	1
+vranges	0
+x_mode	0
+===start VerOut===
+verification result:
+spin -a  eratosthenes_mockerror.pml
+gcc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -DNOCLAIM -w -o pan pan.c
+./pan -m10000 
+Pid: 31
+pan:1: assertion violated 0 (at depth 297)
+pan: wrote eratosthenes_mockerror.pml.trail
+
+(Spin Version 6.5.2 -- 21 June 2024)
+Warning: Search not completed
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (not selected)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 284 byte, depth reached 297, errors: 1
+      252 states, stored
+        0 states, matched
+      252 transitions (= stored+matched)
+        0 atomic steps
+hash conflicts:         0 (resolved)
+
+Stats on memory usage (in Megabytes):
+    0.075	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.288	actual memory usage for states
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+  128.730	total actual memory usage
+
+
+
+pan: elapsed time 0.03 seconds
+To replay the error-trail, goto Simulate/Replay and select "Run"
+
+
+===end VerOut===
+srow0 	1
+srow1 	5
+srow2 	100
+srow3 	10000
+srow4 	4
+srow5 	
+srow6 	512M
+srow7 	60m
+srow8 	1.5
+srow9 	512
+srow10	250000
+srow11	
+srow12	-c1 -x -n
+===start CCopts===
+-DBITSTATE -DPUTPID             # basic dfs
+-DBITSTATE -DPUTPID -DREVERSE   # reversed transition ordering
+-DBITSTATE -DPUTPID -DT_REVERSE # reversed process ordering
+-DBITSTATE -DPUTPID -DREVERSE -DT_REVERSE       # both
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND   # same series with randomization
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE
+
+
+===end CCopts===
+===start SwSetup===
+swarm setup output
+
+
+===end SwSetup===
+===start SwRun===
+swarm run output
+no 'swarm' command is found
+available from: http://spinroot.com/swarm/
+
+
+===end SwRun===

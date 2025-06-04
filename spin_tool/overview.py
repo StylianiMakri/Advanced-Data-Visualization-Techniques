@@ -135,7 +135,6 @@ def visualize_data(data):
     ax1.set_ylabel("Count")
     ax1.tick_params(axis='x', rotation=45)
 
-    # Pie Chart (right)
     ax2 = fig.add_subplot(gs[0, 1])
     if data["memory_usage"]:
         ax2.pie(
@@ -154,8 +153,6 @@ def visualize_data(data):
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust title space
     plt.show()
 
-
-# === Step 4: Run ===
 
 data = parse_spin_output(out_path)
 visualize_data(data)
