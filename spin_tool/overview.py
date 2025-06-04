@@ -3,11 +3,11 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# === Step 1: Search for .out file in /data folder (no renaming) ===
+
 
 data_folder = os.path.join(os.getcwd(), "data")
 
-# Find the first .out file
+
 out_files = [f for f in os.listdir(data_folder) if f.endswith(".out")]
 if out_files:
     out_path = os.path.join(data_folder, out_files[0])
@@ -16,7 +16,7 @@ else:
     print("Error: No '.out' file found in the /data folder.")
     exit(1)
 
-# === Step 2: Parse SPIN output ===
+
 
 def parse_spin_output(file_path):
     data = {
@@ -108,7 +108,7 @@ def parse_spin_output(file_path):
 
     return data
 
-# === Step 3: Visualization ===
+
 
 def visualize_data(data):
     sns.set(style="whitegrid")
@@ -116,9 +116,9 @@ def visualize_data(data):
     import matplotlib.gridspec as gridspec
 
     fig = plt.figure(figsize=(16, 8))
-    gs = gridspec.GridSpec(1, 2)  # 1 row, 2 columns
+    gs = gridspec.GridSpec(1, 2)  
 
-    # Bar Chart (left)
+   
     ax1 = fig.add_subplot(gs[0, 0])
     labels = ["States Stored", "States Visited", "States Matched", "Transitions", "Depth Reached", "Errors", "Hash Conflicts"]
     values = [
