@@ -71,14 +71,14 @@ class Dashboard(QWidget):
         self.clear_button = QPushButton("Clear Uploaded Data")
         self.clear_button.setStyleSheet("""
             QPushButton {
-                background-color: #e74c3c;  /* Bright red */
+                background-color: #e74c3c;
                 color: white;
                 font-weight: bold;
                 border-radius: 6px;
                 padding: 8px;
             }
             QPushButton:hover {
-                background-color: #c0392b;  /* Darker red on hover */
+                background-color: #c0392b;
             }
         """)
         self.clear_button.clicked.connect(self.clear_data_and_output)
