@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton,
-    QFileDialog, QLabel, QMessageBox
+    QFileDialog, QLabel, QMessageBox, QHBoxLayout, QTextEdit, QSizePolicy, QFrame
 )
 from PyQt6.QtCore import Qt
 import os
@@ -22,6 +22,16 @@ class Dashboard(QWidget):
 
         self.label = QLabel("Upload your .trail, .pml, .out and .isf files")
         self.layout.addWidget(self.label)
+        self.layout.addSpacing(10) 
+        
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(line)
+
+        self.data_files_label = QLabel("Current files in /data:")
+        self.layout.addWidget(self.data_files_label)
+        self.update_data_files_display()
 
         self.upload_button = QPushButton("Upload Files")
         self.upload_button.clicked.connect(self.upload_files)
@@ -51,11 +61,34 @@ class Dashboard(QWidget):
         self.OUT_btn.clicked.connect(self.run_OUT)
         self.layout.addWidget(self.OUT_btn)
 
+        self.layout.addSpacing(10) 
         
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(line)
 
+        self.clear_button = QPushButton("Clear Uploaded Data")
+        self.clear_button.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;  /* Bright red */
+                color: white;
+                font-weight: bold;
+                border-radius: 6px;
+                padding: 8px;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;  /* Darker red on hover */
+            }
+        """)
+        self.clear_button.clicked.connect(self.clear_data_and_output)
+        self.layout.addWidget(self.clear_button)
+
+
+        
     def upload_files(self):
         files, _ = QFileDialog.getOpenFileNames(
-            self, "Select .trail, .pml, and .out files",
+            self, "Select .trail, .pml, .isf and .out files",
             "", "All Files (*.trail *.pml *.out *.isf)"
         )
         if not files:
@@ -69,6 +102,50 @@ class Dashboard(QWidget):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Could not copy file: {e}")
         QMessageBox.information(self, "Success", "Files uploaded to 'data folder'")
+
+        self.update_data_files_display()
+
+    def update_data_files_display(self):
+        if not os.path.exists(DATA_DIR):
+            self.data_files_label.setText("No files in /data.")
+            return
+        
+        valid_extensions = {".out", ".trail", ".pml", ".isf"}
+
+        files = [       
+            f for f in os.listdir(DATA_DIR)
+            if os.path.splitext(f)[1].lower() in valid_extensions 
+        ]
+        if files:
+            self.data_files_label.setText("Uploaded Files :\n" + "\n".join(sorted(files)))
+        else:
+            self.data_files_label.setText("No files selected.")
+
+    def clear_data_and_output(self):
+        data_extensions = {".out", ".trail", ".pml", ".isf", ".txt"}
+        output_extensions = {".json", ".png"}
+
+        if os.path.exists(DATA_DIR):
+            for f in os.listdir(DATA_DIR):
+                if os.path.splitext(f)[1].lower() in data_extensions:
+                    try:
+                        os.remove(os.path.join(DATA_DIR, f))
+                    except Exception as e:
+                        QMessageBox.warning(self, "Warning", f"Could not delete {f}: {e}")
+
+        OUTPUT_DIR = os.path.join(BASE_DIR, 'output')
+        if os.path.exists(OUTPUT_DIR):
+            for f in os.listdir(OUTPUT_DIR):
+                if os.path.splitext(f)[1].lower() in output_extensions:
+                    try:
+                        os.remove(os.path.join(OUTPUT_DIR, f))
+                    except Exception as e:
+                        QMessageBox.warning(self, "Warning", f"Could not delete {f}: {e}")
+
+        QMessageBox.information(self, "Cleared", "Data and output files cleared.")
+        self.update_data_files_display()
+
+
 
     def run_parser(self):
         self.run_script("parser_module.py")
