@@ -86,24 +86,15 @@ class Dashboard(QWidget):
         self.run_script("timeline_evolved.py")
 
     def run_msc_maker(self):
-        script_name = "msc_maker.py"
+        self.run_script("msc_maker.py")
+
+    def run_script(self, script_name):
         try:
             subprocess.Popen([sys.executable, script_name])
             QMessageBox.information(self, "Success", f"{script_name} launched successfully!")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to launch {script_name}:\n{e}")
 
-    def run_script(self, script_name):
-        try:
-            result = subprocess.run(
-                [sys.executable, script_name],
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            QMessageBox.information(self, "Success", f"{script_name} ran successfully!")
-        except subprocess.CalledProcessError as e:
-            QMessageBox.critical(self, "Error", f"{script_name} failed:\n{e.stderr}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
