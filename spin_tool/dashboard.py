@@ -61,6 +61,10 @@ class Dashboard(QWidget):
         self.OUT_btn.clicked.connect(self.run_OUT)
         self.layout.addWidget(self.OUT_btn)
 
+        self.why_btn = QPushButton("Why it Failed")
+        self.why_btn.clicked.connect(self.run_whyitfailed)
+        self.layout.addWidget(self.why_btn)
+
         self.layout.addSpacing(10) 
         
         line = QFrame()
@@ -164,6 +168,9 @@ class Dashboard(QWidget):
 
     def run_msc_maker(self):
         self.run_script("msc_maker.py")
+
+    def run_whyitfailed(self):
+        self.run_script("why_it_failed.py")
 
     def run_script(self, script_name):
         try:

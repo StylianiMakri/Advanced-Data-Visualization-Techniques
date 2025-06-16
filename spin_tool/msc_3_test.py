@@ -26,7 +26,7 @@ for e in events:
 processes = list(dict.fromkeys(proc for proc, _ in events))
 
 
-def draw_arrow(scene, start_point, end_point, color=Qt.GlobalColor.blue):
+def draw_arrow(scene, start_point, end_point, color=Qt.GlobalColor.black):
     x1, y1 = start_point
     x2, y2 = end_point
     pen = QPen(color, 2)
@@ -82,7 +82,7 @@ def draw_msc():
 
         # Yellow box
         rect = QGraphicsRectItem(x - rect_width / 2, y, rect_width, rect_height)
-        rect.setBrush(QBrush(QColor("yellow")))
+        rect.setBrush(QBrush(QColor("pink")))
         scene.addItem(rect)
 
         text = QGraphicsTextItem(label)
