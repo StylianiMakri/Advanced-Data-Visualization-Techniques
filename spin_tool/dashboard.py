@@ -161,7 +161,7 @@ class Dashboard(QWidget):
         self.run_script("OUT_viewer.py")
 
     def run_visualizer(self):
-        self.run_script("vizualizer_module_3.py")
+        self.run_script("vizualizer_module.py")
 
     def run_sequence(self):
         self.run_script("timeline_evolved.py")
