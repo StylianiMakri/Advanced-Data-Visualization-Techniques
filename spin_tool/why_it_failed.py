@@ -3,11 +3,11 @@ import re
 import sys
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit,
-    QMainWindow, QScrollArea, QPushButton
+    QMainWindow, QPushButton, QGraphicsView, QGraphicsScene,
+    QGraphicsEllipseItem, QGraphicsTextItem, QSizePolicy
 )
-from PyQt6.QtCore import Qt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+from PyQt6.QtCore import Qt, QRectF
+from PyQt6.QtGui import QFont, QPen, QBrush, QColor, QWheelEvent, QPainter
 
 DATA_DIR = './data'
 
@@ -68,26 +68,6 @@ def extract_simulation(txt_path):
     return sim_lines
 
 
-def get_causal_slice(sim_lines, error_condition):
-    causal_steps = []
-    m_var = re.search(r'([a-zA-Z_][a-zA-Z0-9_]*)', error_condition)
-    variable = m_var.group(1) if m_var else None
-    last_value = None
-
-    for line in sim_lines:
-        if variable and re.search(rf'\b{variable}\b\s*=', line):
-            causal_steps.append(line)
-            val_match = re.search(r'=\s*(\S+)', line)
-            if val_match:
-                last_value = val_match.group(1)
-        elif variable and re.search(rf'\b{variable}\b\s+from\b', line):
-            causal_steps.append(line)
-        elif 'assert' in line or 'FAIL' in line:
-            causal_steps.append(line)
-
-    return variable, last_value, causal_steps
-
-
 def parse_trail(trail_path):
     transitions = []
     with open(trail_path, 'r') as f:
@@ -100,37 +80,73 @@ def parse_trail(trail_path):
     return transitions
 
 
-class TimelineCanvas(FigureCanvas):
-    def __init__(self, transitions, parent=None, width=6, height=3, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super().__init__(fig)
+class TimelineWidget(QGraphicsView):
+    def __init__(self, transitions, parent=None):
+        super().__init__(parent)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+        self.scene = QGraphicsScene(self)
+        self.setScene(self.scene)
+
         self.draw_timeline(transitions)
 
     def draw_timeline(self, transitions):
-        self.axes.clear()
-        y_labels = {}
-        y_pos = 0
+        self.scene.clear()
+        y_map = {}
+        y_spacing = 50
+        dot_radius = 4
 
         for _, proc, _ in transitions:
-            if proc not in y_labels:
-                y_labels[proc] = y_pos
-                y_pos += 1
+            if proc not in y_map:
+                y_map[proc] = len(y_map)
 
+        max_step = max((step for step, _, _ in transitions), default=0)
+        max_x = max_step * 20 + 100
+        max_y = (len(y_map)) * y_spacing
+
+        # Grid: Vertical step lines
+        for step in range(0, max_step + 1, 5):  # every 5 steps
+            x = step * 20
+            line = self.scene.addLine(x, -20, x, max_y, QPen(QColor("#dddddd")))
+            line.setZValue(-1)  # behind everything
+
+        # Grid: Horizontal process lines
+        for _, y_index in y_map.items():
+            y = y_index * y_spacing
+            line = self.scene.addLine(-80, y, max_x, y, QPen(QColor("#dddddd")))
+            line.setZValue(-1)
+
+        # Draw timeline points
         for step, proc, action in transitions:
-            self.axes.plot(step, y_labels[proc], 'o', color='blue')
-            self.axes.text(step, y_labels[proc] + 0.1, f'{action}', fontsize=8, ha='center')
+            x = step * 20
+            y = y_map[proc] * y_spacing
 
-        self.axes.set_yticks(list(y_labels.values()))
-        self.axes.set_yticklabels([f'proc {p}' for p in y_labels.keys()])
-        self.axes.set_xlabel("Step")
-        self.axes.set_title("Execution Timeline")
-        self.axes.grid(True)
-        self.figure.tight_layout()
-        self.draw()
+            dot = QGraphicsEllipseItem(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
+            dot.setBrush(QBrush(QColor("blue")))
+            dot.setPen(QPen(Qt.GlobalColor.black))
+            self.scene.addItem(dot)
+
+            label = QGraphicsTextItem(str(action))
+            label.setDefaultTextColor(Qt.GlobalColor.darkGray)
+            label.setPos(x - 5, y - 20)
+            self.scene.addItem(label)
+
+        for proc, idx in y_map.items():
+            label = QGraphicsTextItem(f"proc {proc}")
+            label.setDefaultTextColor(Qt.GlobalColor.black)
+            label.setPos(-70, idx * y_spacing - 6)
+            self.scene.addItem(label)
+
+        self.scene.setSceneRect(-80, -30, max_x + 150, max_y + 60)
 
 
-from PyQt6.QtGui import QFont
+    def wheelEvent(self, event: QWheelEvent):
+        zoom = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
+        self.scale(zoom, 1)
+
 
 class ErrorViewer(QMainWindow):
     EXPLANATIONS = {
@@ -144,24 +160,20 @@ class ErrorViewer(QMainWindow):
     def __init__(self, errors, sim_lines, transitions):
         super().__init__()
         self.setWindowTitle("SPIN Error Viewer")
-        self.setGeometry(100, 100, 1000, 800)
+        self.setGeometry(100, 100, 900, 700)
 
         central = QWidget()
         layout = QVBoxLayout(central)
-        layout.setSpacing(1)             # less spacing between widgets
-        layout.setContentsMargins(2, 2, 2, 2)  # reduce margins
+        layout.setSpacing(2)
+        layout.setContentsMargins(5, 5, 5, 5)
         self.setCentralWidget(central)
 
-        title_font = QFont()
-        title_font.setPointSize(14)      # smaller title font
-        title_font.setBold(True)
-
-        expl_font = QFont()
-        expl_font.setPointSize(10)        # smaller explanation font
+        title_font = QFont("Arial", 11, QFont.Weight.Bold)
+        expl_font = QFont("Arial", 9)
 
         for error in errors:
             err_title = {
-                'assert': f"❗ Assertion Failed at Line {error.get('line', 'none')}: <code>{error.get('condition', 'none')}</code>",
+                'assert': f"❗ Assertion Failed: {error.get('condition', 'unknown')}",
                 'deadlock': "🛑 Deadlock Detected",
                 'invalid_end': f"⚠ Invalid End State (depth {error.get('depth', '?')})",
                 'unmatched_comm': "❗ Unmatched Communication Detected",
@@ -169,34 +181,31 @@ class ErrorViewer(QMainWindow):
             }
             title = QLabel(err_title.get(error['type'], 'Unknown Error'))
             title.setFont(title_font)
-            title.setTextFormat(Qt.TextFormat.PlainText)  # remove html tags like <h3>
-            title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            title.setContentsMargins(0,0,0,0)
-            title.setContentsMargins(0,0,0,0)
+            title.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+            title.setStyleSheet("margin:0px; padding:0px; line-height:90%;")
             layout.addWidget(title)
 
             expl = self.EXPLANATIONS.get(error['type'], "Unknown error.")
-            expl_label = QLabel(f"Explanation: {expl}")
+            expl_label = QLabel(expl)
             expl_label.setFont(expl_font)
             expl_label.setWordWrap(True)
-            expl_label.setContentsMargins(0, 0, 0, 1)  # small bottom margin
-            expl_label.setStyleSheet("margin-top: 1px;")
+            expl_label.setStyleSheet("margin:0px; padding:0px; line-height:90%; color: #444;")
             layout.addWidget(expl_label)
 
-            layout.setSpacing(1)
+        timeline = TimelineWidget(transitions)
+        timeline.setMinimumHeight(200)
+        layout.addWidget(timeline)
 
-        # Timeline
-        canvas = TimelineCanvas(transitions, width=8, height=3)
-        layout.addWidget(canvas)
-
-        # Show full simulation button
         self.toggle_button = QPushButton("Show Full Simulation Trace")
+        self.toggle_button.setStyleSheet("margin:4px; padding:4px;")
         layout.addWidget(self.toggle_button)
 
         self.sim_box = QTextEdit()
         self.sim_box.setReadOnly(True)
         self.sim_box.setFontFamily("Courier")
+        self.sim_box.setFontPointSize(9)
         self.sim_box.setVisible(False)
+        self.sim_box.setStyleSheet("margin:0px; padding:2px;")
         layout.addWidget(self.sim_box)
 
         self.toggle_button.clicked.connect(lambda: self.toggle_trace(sim_lines))
@@ -205,17 +214,18 @@ class ErrorViewer(QMainWindow):
         visible = self.sim_box.isVisible()
         if not visible:
             self.sim_box.clear()
-            for line in sim_lines:
-                self.sim_box.append(line)
+            self.sim_box.append("\n".join(sim_lines))
         self.sim_box.setVisible(not visible)
-        self.toggle_button.setText("Hide Full Simulation Trace" if not visible else "Show Full Simulation Trace")
-
+        self.toggle_button.setText(
+            "Hide Full Simulation Trace" if not visible else "Show Full Simulation Trace"
+        )
 
 
 def main():
     trail_file, txt_file, out_file = find_files()
+    app = QApplication(sys.argv)
+
     if not all([trail_file, txt_file, out_file]):
-        app = QApplication(sys.argv)
         win = QMainWindow()
         win.setWindowTitle("Missing Files")
         lbl = QLabel("Required .trail, .txt, or .out files not found in /data.")
@@ -227,7 +237,6 @@ def main():
 
     errors = parse_out(out_file)
     if not errors:
-        app = QApplication(sys.argv)
         win = QMainWindow()
         win.setWindowTitle("No Known Error")
         lbl = QLabel("No error (assertion, deadlock, etc.) found in .out file.")
@@ -240,11 +249,9 @@ def main():
     sim_lines = extract_simulation(txt_file)
     transitions = parse_trail(trail_file)
 
-    app = QApplication(sys.argv)
     win = ErrorViewer(errors, sim_lines, transitions)
     win.show()
     sys.exit(app.exec())
-
 
 
 if __name__ == '__main__':
