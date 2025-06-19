@@ -107,29 +107,26 @@ class TimelineWidget(QGraphicsView):
         max_x = max_step * 20 + 100
         max_y = (len(y_map)) * y_spacing
 
-        # Grid: Vertical step lines
-        for step in range(0, max_step + 1, 5):  # every 5 steps
+        for step in range(0, max_step + 1, 5):  
             x = step * 20
             line = self.scene.addLine(x, -20, x, max_y, QPen(QColor("#dddddd")))
-            line.setZValue(-1)  # behind everything
+            line.setZValue(-1) 
 
-        # Grid: Horizontal process lines
         for _, y_index in y_map.items():
             y = y_index * y_spacing
-            line = self.scene.addLine(-80, y, max_x, y, QPen(QColor("#dddddd")))
+            line = self.scene.addLine(-80, y, max_x, y, QPen(QColor("#ddddddd6")))
             line.setZValue(-1)
 
-        # Draw timeline points
-        for step, proc, action in transitions:
+        for idx, (step, proc, _) in enumerate(transitions, start=1):
             x = step * 20
             y = y_map[proc] * y_spacing
 
-            dot = QGraphicsEllipseItem(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
+            dot = QGraphicsEllipseItem(QRectF(x - dot_radius, y - dot_radius, dot_radius * 3, dot_radius * 3))
             dot.setBrush(QBrush(QColor("blue")))
             dot.setPen(QPen(Qt.GlobalColor.black))
             self.scene.addItem(dot)
 
-            label = QGraphicsTextItem(str(action))
+            label = QGraphicsTextItem(str(idx))
             label.setDefaultTextColor(Qt.GlobalColor.darkGray)
             label.setPos(x - 5, y - 20)
             self.scene.addItem(label)
