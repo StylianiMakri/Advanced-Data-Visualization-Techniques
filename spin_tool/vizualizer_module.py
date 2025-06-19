@@ -226,7 +226,6 @@ class SpinVisualizer(QWidget):
                 ]
                 ws.append(row)
 
-            # Auto-adjust column widths
             for col_idx, _ in enumerate(headers, start=1):
                 max_length = max(
                     len(str(ws.cell(row=row_idx, column=col_idx).value or ""))
