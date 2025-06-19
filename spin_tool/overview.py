@@ -1,68 +1,35 @@
-import re
+import sys
 import os
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-
-
-data_folder = os.path.join(os.getcwd(), "data")
-
-
-out_files = [f for f in os.listdir(data_folder) if f.endswith(".out")]
-if out_files:
-    out_path = os.path.join(data_folder, out_files[0])
-    print(f"Using file: {out_files[0]}")
-else:
-    print("Error: No '.out' file found in the /data folder.")
-    exit(1)
-
+import re
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsRectItem,
+    QGraphicsTextItem, QVBoxLayout, QWidget
+)
+from PyQt6.QtGui import QBrush, QPen, QColor
+from PyQt6.QtCore import Qt, QRectF
 
 
 def parse_spin_output(file_path):
     data = {
-        "compilation_flags": [],
-        "settings": [],
-        "checks": {},
         "statespace": {
-            "state_vector_size": 0,
-            "depth_reached": 0,
             "states_stored": 0,
             "states_visited": 0,
             "states_matched": 0,
             "transitions": 0,
-            "atomic_steps": 0,
+            "depth_reached": 0,
+            "errors": 0,
             "hash_conflicts": 0
         },
-        "memory_usage": {},
-        "unreached": [],
-        "elapsed_time": 0.0,
-        "errors": 0,
-        "final_status": ""
+        "memory_usage": {}
     }
 
     with open(file_path, 'r') as file:
         for line in file:
-            if line.startswith('spin -a') or 'gcc' in line or './pan' in line:
-                data["compilation_flags"].append(line.strip())
-
-            if 'Partial Order Reduction' in line:
-                data["settings"].append("Partial Order Reduction enabled")
-
-            if 'never claim' in line:
-                data["checks"]["never_claim"] = '+' in line
-            if 'assertion violations' in line:
-                data["checks"]["assertion_violations"] = '+' in line
-            if 'non-progress cycles' in line:
-                data["checks"]["non_progress_cycles"] = '+' in line
-            if 'invalid end states' in line:
-                data["checks"]["invalid_end_states"] = '+' in line
-
             if "State-vector" in line:
                 match = re.search(r'State-vector (\d+) byte, depth reached (\d+), errors: (\d+)', line)
                 if match:
-                    data["statespace"]["state_vector_size"] = int(match.group(1))
                     data["statespace"]["depth_reached"] = int(match.group(2))
-                    data["errors"] = int(match.group(3))
+                    data["statespace"]["errors"] = int(match.group(3))
 
             if "states, stored" in line:
                 numbers = re.findall(r'\d+', line)
@@ -80,11 +47,6 @@ def parse_spin_output(file_path):
                 if numbers:
                     data["statespace"]["transitions"] = int(numbers[0])
 
-            if "atomic steps" in line:
-                numbers = re.findall(r'\d+', line)
-                if numbers:
-                    data["statespace"]["atomic_steps"] = int(numbers[0])
-
             if "hash conflicts" in line:
                 numbers = re.findall(r'\d+', line)
                 if numbers:
@@ -95,64 +57,89 @@ def parse_spin_output(file_path):
                 for value, key in match:
                     data["memory_usage"][key.strip()] = float(value)
 
-            if "unreached in proctype" in line or "unreached in init" in line:
-                data["unreached"].append(line.strip())
-
-            if "elapsed time" in line:
-                match = re.search(r'elapsed time ([\d\.]+) seconds', line)
-                if match:
-                    data["elapsed_time"] = float(match.group(1))
-
-            if "No errors found" in line or "errors found" in line:
-                data["final_status"] = line.strip()
-
     return data
 
 
+class StatsViewer(QMainWindow):
+    def __init__(self, data):
+        super().__init__()
+        self.setWindowTitle("SPIN Statistics Viewer")
+        self.setGeometry(100, 100, 800, 400)
 
-def visualize_data(data):
-    sns.set(style="whitegrid")
+        layout = QVBoxLayout()
+        central = QWidget()
+        central.setLayout(layout)
+        self.setCentralWidget(central)
 
-    import matplotlib.gridspec as gridspec
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene)
+        layout.addWidget(self.view)
 
-    fig = plt.figure(figsize=(16, 8))
-    gs = gridspec.GridSpec(1, 2)  
+        self.draw_barchart(data["statespace"], start_y=0)
+        if data["memory_usage"]:
+            self.draw_piechart(data["memory_usage"], center_x=550, center_y=150, radius=80)
 
-   
-    ax1 = fig.add_subplot(gs[0, 0])
-    labels = ["States Stored", "States Visited", "States Matched", "Transitions", "Depth Reached", "Errors", "Hash Conflicts"]
-    values = [
-        data["statespace"]["states_stored"],
-        data["statespace"]["states_visited"],
-        data["statespace"]["states_matched"],
-        data["statespace"]["transitions"],
-        data["statespace"]["depth_reached"],
-        data["errors"],
-        data["statespace"]["hash_conflicts"]
-    ]
-    sns.barplot(x=labels, y=values, palette="viridis", ax=ax1)
-    ax1.set_title("SPIN Statespace Statistics")
-    ax1.set_ylabel("Count")
-    ax1.tick_params(axis='x', rotation=45)
+    def draw_barchart(self, stats, start_y):
+        bar_width = 30
+        spacing = 20
+        x = 50
+        max_value = max(stats.values()) or 1
+        scale = 200 / max_value
 
-    ax2 = fig.add_subplot(gs[0, 1])
-    if data["memory_usage"]:
-        ax2.pie(
-            data["memory_usage"].values(),
-            labels=data["memory_usage"].keys(),
-            autopct='%1.1f%%',
-            colors=sns.color_palette("coolwarm", len(data["memory_usage"]))
-        )
-        ax2.set_title("Memory Usage Breakdown")
-    else:
-        ax2.text(0.5, 0.5, "No Memory Usage Info", ha='center', va='center')
-        ax2.set_title("Memory Usage Breakdown")
-        ax2.axis('off')
+        for i, (label, value) in enumerate(stats.items()):
+            height = value * scale
+            bar = QGraphicsRectItem(x, 300 - height, bar_width, height)
+            bar.setBrush(QBrush(QColor("#5a9")))
+            bar.setPen(QPen(Qt.GlobalColor.black))
+            self.scene.addItem(bar)
 
-    fig.suptitle("SPIN Verification Overview", fontsize=16)
-    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust title space
-    plt.show()
+            txt = QGraphicsTextItem(f"{label}\n{value}")
+            txt.setPos(x - 10, 310)
+            txt.setTextWidth(50)
+            self.scene.addItem(txt)
+
+            x += bar_width + spacing
+
+    def draw_piechart(self, memory_dict, center_x, center_y, radius):
+        total = sum(memory_dict.values())
+        if total == 0:
+            return
+
+        start_angle = 0
+        colors = ["#c44", "#4c4", "#44c", "#cc4", "#4cc", "#c4c"]
+        for i, (key, value) in enumerate(memory_dict.items()):
+            angle_span = 360 * (value / total)
+            slice_item = self.scene.addEllipse(
+                QRectF(center_x - radius, center_y - radius, radius * 2, radius * 2),
+                QPen(Qt.GlobalColor.black),
+                QBrush(QColor(colors[i % len(colors)]))
+            )
+            slice_item.setStartAngle(int(start_angle * 16))
+            slice_item.setSpanAngle(int(angle_span * 16))
+
+            label = QGraphicsTextItem(f"{key}: {value:.1f}")
+            label.setPos(center_x + radius + 10, center_y - radius + i * 20)
+            self.scene.addItem(label)
+
+            start_angle += angle_span
 
 
-data = parse_spin_output(out_path)
-visualize_data(data)
+def main():
+    data_folder = os.path.join(os.getcwd(), "data")
+    out_files = [f for f in os.listdir(data_folder) if f.endswith(".out")]
+
+    if not out_files:
+        print("No .out file found in /data.")
+        return
+
+    path = os.path.join(data_folder, out_files[0])
+    data = parse_spin_output(path)
+
+    app = QApplication(sys.argv)
+    viewer = StatsViewer(data)
+    viewer.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
