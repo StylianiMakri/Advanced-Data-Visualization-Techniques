@@ -1,12 +1,12 @@
-import sys
-import shutil
-import subprocess
-import os
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton,
-    QFileDialog, QLabel, QMessageBox, QFrame, QTextEdit
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QFileDialog, QLabel, QMessageBox, QFrame, QTextEdit, QGroupBox, QSizePolicy
 )
 from PyQt6.QtCore import Qt
+import os
+import shutil
+import subprocess
+import sys
 
 # === Constants ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -32,67 +32,81 @@ class Dashboard(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SPIN Tool Dashboard")
-        self.setGeometry(100, 100, 450, 600)
-
+        self.setGeometry(100, 100, 500, 600)
         self.setup_ui()
         self.update_data_files_display()
 
     def setup_ui(self):
-        self.setStyleSheet("font-family: Segoe UI, sans-serif; font-size: 11pt; background-color: #f9f9f9;")
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
+        self.setStyleSheet("font-family: Segoe UI, sans-serif; font-size: 10pt; background-color: #f9f9f9;")
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
 
-        # Section label
-        self.label = QLabel("Upload your .trail, .pml, .out and .isf files")
-        self.label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #333; margin-top: 10px;")
-        self.layout.addWidget(self.label)
-        self.layout.addSpacing(10)
+        main_layout.addWidget(QLabel("File Operations"))
+        file_layout = QHBoxLayout()
+        upload_btn = self.styled_button("Upload Files", "#7dcb5b", "#599ecb")
+        upload_btn.clicked.connect(self.upload_files)
+        file_layout.addWidget(upload_btn)
 
-        self.layout.addWidget(self.make_line())
+        clear_btn = self.styled_button("Clear Files", "#e74c3c", "#c0392b")
+        clear_btn.clicked.connect(self.clear_data_and_output)
+        file_layout.addWidget(clear_btn)
+        main_layout.addLayout(file_layout)
+        main_layout.addWidget(self.make_line())
 
+        parser_label = QLabel("Run Parser")
+        parser_label.setStyleSheet("font-size: 10pt; margin-top: 10px;")
+        main_layout.addWidget(parser_label)
+
+        parser_btn = self.styled_button("Run Parser Module", "#8ad5e6", "#588a8d", large=True)
+        parser_btn.clicked.connect(lambda: self.run_script("parser_module.py"))
+        main_layout.addWidget(parser_btn)
+
+        main_layout.addWidget(self.make_line())
+
+        module_group = QGroupBox("Analysis Modules")
+        module_layout = QVBoxLayout()
+        rows = [
+            [("Visualizer", "vizualizer_module.py"), ("Timeline", "timeline_evolved.py")],
+            [("MSC Maker", "msc_maker.py"), ("Overview", "overview.py")],
+            [("Out Viewer", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")]
+        ]
+        for row in rows:
+            row_layout = QHBoxLayout()
+            for label, script in row:
+                btn = self.styled_button(label)
+                btn.clicked.connect(lambda _, s=script: self.run_script(s))
+                row_layout.addWidget(btn)
+            module_layout.addLayout(row_layout)
+        module_group.setLayout(module_layout)
+        main_layout.addWidget(module_group)
+        main_layout.addWidget(self.make_line())
+
+        main_layout.addWidget(QLabel("Files in /data:"))
         self.file_display = QTextEdit()
         self.file_display.setReadOnly(True)
+        self.file_display.setFixedHeight(150)
         self.file_display.setStyleSheet("background-color: #ffffff; border: 1px solid #ccc; padding: 6px;")
-        self.layout.addWidget(self.file_display)
+        main_layout.addWidget(self.file_display)
 
-        buttons = [
-            ("Upload Files", self.upload_files),
-            ("Run Parser Module", lambda: self.run_script("parser_module.py")),
-            ("Run Vizualizer Module", lambda: self.run_script("vizualizer_module.py")),
-            ("Run Process Timeline", lambda: self.run_script("timeline_evolved.py")),
-            ("Run MSC Maker", lambda: self.run_script("msc_maker.py")),
-            ("Run Stats Overview", lambda: self.run_script("overview.py")),
-            ("Run .out Viewer", lambda: self.run_script("OUT_viewer.py")),
-            ("Why it Failed", lambda: self.run_script("why_it_failed.py")),
-        ]
-
-        for text, func in buttons:
-            btn = self.styled_button(text)
-            btn.clicked.connect(func)
-            self.layout.addWidget(btn)
-
-        self.layout.addSpacing(10)
-        self.layout.addWidget(self.make_line())
-
-        self.clear_button = self.styled_button("Clear Uploaded Data", "#e74c3c", "#c0392b")
-        self.clear_button.clicked.connect(self.clear_data_and_output)
-        self.layout.addWidget(self.clear_button)
-
-    def styled_button(self, text, color="#f2d2b0", hover="#eac37c"):
+    def styled_button(self, text, color="#f2d2b0", hover="#eac37c", large=False):
+        font_size = "13pt" if large else "11pt"
+        padding = "12px" if large else "8px"
         btn = QPushButton(text)
         btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {color};
                 color: black;
                 font-weight: bold;
+                font-size: {font_size};
                 border: none;
                 border-radius: 6px;
-                padding: 8px;
+                padding: {padding};
             }}
             QPushButton:hover {{
                 background-color: {hover};
             }}
         """)
+        btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         return btn
 
     def make_line(self):
@@ -128,10 +142,7 @@ class Dashboard(QWidget):
             f for f in os.listdir(DATA_DIR)
             if os.path.splitext(f)[1].lower() in DATA_EXTENSIONS
         ]
-        if files:
-            self.file_display.setPlainText("\n".join(sorted(files)))
-        else:
-            self.file_display.setPlainText("No files selected.")
+        self.file_display.setPlainText("\n".join(sorted(files)) if files else "No files selected.")
 
     def clear_data_and_output(self):
         delete_files_by_extension(DATA_DIR, DATA_EXTENSIONS)
