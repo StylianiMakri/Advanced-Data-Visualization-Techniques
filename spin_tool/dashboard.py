@@ -57,7 +57,7 @@ class Dashboard(QWidget):
         main_layout.addWidget(parser_label)
 
         parser_btn = self.styled_button("Run Parser Module", "#8ad5e6", "#369095", large=True)
-        parser_btn.clicked.connect(lambda: self.run_script("parser_module.py"))
+        parser_btn.clicked.connect(self.run_parsers)
         main_layout.addWidget(parser_btn)
 
         main_layout.addWidget(self.make_line())
@@ -66,7 +66,7 @@ class Dashboard(QWidget):
         module_layout = QVBoxLayout()
         rows = [
             [("Visualizer", "vizualizer_module.py"), ("Timeline", "timeline_evolved.py")],
-            [("MSC Maker", "msc_maker.py"), ("Overview", "overview.py")],
+            [("MSC Maker", "msc_maker_80.py"), ("Overview", "overview.py")],
             [("Out Viewer", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")]
         ]
         for row in rows:
@@ -131,6 +131,14 @@ class Dashboard(QWidget):
 
         QMessageBox.information(self, "Success", "Files uploaded to 'data' folder")
         self.update_data_files_display()
+
+    def run_parsers(self):
+        try:
+            self.run_script("parser_module.py")
+            self.run_script("parser_msc.py")
+        except Exception as e:
+            print(f"Error running parsers: {e}")
+
 
     def update_data_files_display(self):
         if not os.path.exists(DATA_DIR):

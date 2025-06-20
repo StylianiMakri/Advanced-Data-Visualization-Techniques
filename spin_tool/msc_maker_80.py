@@ -1,10 +1,10 @@
 import os
 import json
+import sys
 
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem
 from PyQt6.QtGui import QPen, QBrush, QColor, QPainterPath
 from PyQt6.QtCore import Qt, QPointF
-import sys
 
 def load_events_from_output():
     output_dir = "output"
@@ -14,17 +14,6 @@ def load_events_from_output():
     json_path = os.path.join(output_dir, json_files[0])
     with open(json_path, 'r') as f:
         return json.load(f)
-
-# Load events from JSON file
-events = load_events_from_output()
-print("Loaded events:")
-for e in events:
-    print(e)
-
-
-# Dynamically determine unique processes in order of appearance
-processes = list(dict.fromkeys(proc for proc, _ in events))
-
 
 def draw_arrow(scene, start_point, end_point, color=Qt.GlobalColor.black):
     x1, y1 = start_point
@@ -51,6 +40,16 @@ def draw_arrow(scene, start_point, end_point, color=Qt.GlobalColor.black):
     path.closeSubpath()
     scene.addPath(path, pen, QBrush(color))
 
+def normalize_label(label):
+    """Extract channel and message type ignoring payload"""
+    if '!' in label:
+        chan, content = label.split('!', 1)
+    elif '?' in label:
+        chan, content = label.split('?', 1)
+    else:
+        return None, None
+    msg_type = content.split(',', 1)[0].strip()
+    return chan.strip(), msg_type
 
 def draw_msc():
     app = QApplication(sys.argv)
@@ -61,26 +60,38 @@ def draw_msc():
 
     spacing_x = 160
     top_y = 50
-    process_positions = {}
     rect_width = 110
     rect_height = 25
+    y_step = 35
 
-    # Draw lifelines and process labels
+    events = load_events_from_output()
+
+    # Get unique processes in order
+    processes = list(dict.fromkeys(proc for proc, _ in events))
+
+    process_positions = {}
+    # Assign x positions, giving empty "" processes a default column at x=spacing_x
     for i, proc in enumerate(processes):
-        x = spacing_x * (i + 1)
+        x = spacing_x * (i + 1) if proc else spacing_x // 2
         process_positions[proc] = x
         scene.addLine(x, top_y, x, top_y + 1000, QPen(Qt.GlobalColor.black, 1, Qt.PenStyle.DashLine))
-        label = QGraphicsTextItem(proc)
+        label = QGraphicsTextItem(proc if proc else "(init)")
         label.setPos(x - 35, top_y - 30)
         scene.addItem(label)
 
-    # Draw events and arrows
-    y_step = 35
+    # Define channel equivalences for matching sends and receives on different channel names
+    channel_equiv = {
+        '4': 'me',
+        'me': '4',
+        # Add more if needed
+    }
+
+    pending_sends = {}
+
     for step, (proc, label) in enumerate(events):
         y = top_y + step * y_step
-        x = process_positions[proc]
+        x = process_positions.get(proc, spacing_x // 2)  # default x for unknown process
 
-        # Yellow box
         rect = QGraphicsRectItem(x - rect_width / 2, y, rect_width, rect_height)
         rect.setBrush(QBrush(QColor("pink")))
         scene.addItem(rect)
@@ -90,41 +101,43 @@ def draw_msc():
         text.setPos(x - rect_width / 2 + 5, y + 3)
         scene.addItem(text)
 
-        # If it is a receive (?...), try to draw arrow from matching send
-        if '?' in label:
-            chan_recv, payload_recv = label.split('?')
-            # recv payload splits into type and value
-            if ',' in payload_recv:
-                msg_type_recv, _ = payload_recv.split(',', 1)
+        chan, msg_type = normalize_label(label)
+        if chan is None or msg_type is None:
+            continue
+
+        if '!' in label:
+            key = (chan, msg_type)
+            pending_sends.setdefault(key, []).append((proc, step))
+
+        elif '?' in label:
+            key = (chan, msg_type)
+            matched_send = None
+
+            # Try exact match first
+            if key in pending_sends and pending_sends[key]:
+                matched_send = pending_sends[key].pop(0)
             else:
-                msg_type_recv = payload_recv
+                # Try equivalent channel matching
+                equiv_chan = channel_equiv.get(chan)
+                if equiv_chan:
+                    equiv_key = (equiv_chan, msg_type)
+                    if equiv_key in pending_sends and pending_sends[equiv_key]:
+                        matched_send = pending_sends[equiv_key].pop(0)
 
-            for prev_step in range(step - 1, -1, -1):
-                prev_proc, prev_label = events[prev_step]
-                if '!' in prev_label:
-                    chan_send, payload_send = prev_label.split('!')
-                    if ',' in payload_send:
-                        msg_type_send, _ = payload_send.split(',', 1)
-                    else:
-                        msg_type_send = payload_send
+            if matched_send:
+                send_proc, send_step = matched_send
+                x1 = process_positions.get(send_proc, spacing_x // 2) + rect_width / 2
+                y1 = top_y + send_step * y_step + rect_height / 2
+                x2 = x - rect_width / 2
+                y2 = y + rect_height / 2
+                draw_arrow(scene, (x1, y1), (x2, y2))
 
-                    if chan_send == chan_recv and msg_type_send == msg_type_recv:
-                        print(f"Match found: from {prev_proc} at step {prev_step} to {proc} at step {step}")
-                        x1 = process_positions[prev_proc] + rect_width / 2
-                        y1 = top_y + prev_step * y_step + rect_height / 2
-                        x2 = process_positions[proc] - rect_width / 2
-                        y2 = y + rect_height / 2
-                        draw_arrow(scene, (x1, y1), (x2, y2))
-                        break
-
-
-
-    # Final red dashed line
     final_y = top_y + len(events) * y_step + 20
-    scene.addLine(spacing_x, final_y, spacing_x * (len(processes) + 1), final_y,
+    scene.addLine(spacing_x // 2, final_y, spacing_x * (len(processes) + 1), final_y,
                   QPen(QColor("red"), 2, Qt.PenStyle.DashLine))
 
     view.show()
     sys.exit(app.exec())
 
-draw_msc()
+if __name__ == "__main__":
+    draw_msc()
