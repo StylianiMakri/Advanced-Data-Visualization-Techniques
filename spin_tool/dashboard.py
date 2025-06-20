@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import sys
 
-# === Constants ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'output')
@@ -57,7 +56,7 @@ class Dashboard(QWidget):
         parser_label.setStyleSheet("font-size: 10pt; margin-top: 10px;")
         main_layout.addWidget(parser_label)
 
-        parser_btn = self.styled_button("Run Parser Module", "#8ad5e6", "#588a8d", large=True)
+        parser_btn = self.styled_button("Run Parser Module", "#8ad5e6", "#369095", large=True)
         parser_btn.clicked.connect(lambda: self.run_script("parser_module.py"))
         main_layout.addWidget(parser_btn)
 

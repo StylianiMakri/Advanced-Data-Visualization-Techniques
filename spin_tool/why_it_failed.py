@@ -171,10 +171,10 @@ class ErrorViewer(QMainWindow):
         for error in errors:
             err_title = {
                 'assert': f"❗ Assertion Failed: {error.get('condition', 'unknown')}",
-                'deadlock': "🛑 Deadlock Detected",
-                'invalid_end': f"⚠ Invalid End State (depth {error.get('depth', '?')})",
+                'deadlock': "❗ Deadlock Detected",
+                'invalid_end': f"❗ Invalid End State (depth {error.get('depth', '?')})",
                 'unmatched_comm': "❗ Unmatched Communication Detected",
-                'never_claim': "⛔ Never Claim Violated"
+                'never_claim': "❗ Never Claim Violated"
             }
             title = QLabel(err_title.get(error['type'], 'Unknown Error'))
             title.setFont(title_font)

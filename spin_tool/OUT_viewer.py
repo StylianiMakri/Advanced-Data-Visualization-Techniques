@@ -124,7 +124,6 @@ class SpinOutViewer(QWidget):
 
         main_layout = QVBoxLayout()
 
-        # Buttons for open all / close all
         btn_layout = QHBoxLayout()
         self.open_all_btn = QPushButton("Open All")
         self.close_all_btn = QPushButton("Close All")
