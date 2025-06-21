@@ -83,7 +83,7 @@ def process_single_txt_in_data(channel_map={'f': '2', 'you': '4'}):
     sim_lines = extract_simulation_block(input_path)
     events = parse_simulation_events(sim_lines, channel_map)
     save_events_to_json(events, output_path)
-    print(f"[✓] Extracted {len(events)} events from {filename} → {output_path}")
+    print(f"Extracted {len(events)} events from {filename} → {output_path}")
 
 if __name__ == "__main__":
     process_single_txt_in_data()

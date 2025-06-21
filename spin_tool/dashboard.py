@@ -42,7 +42,7 @@ class Dashboard(QWidget):
 
         main_layout.addWidget(QLabel("File Operations"))
         file_layout = QHBoxLayout()
-        upload_btn = self.styled_button("Upload Files", "#7dcb5b", "#599ecb")
+        upload_btn = self.styled_button("Upload Files", "#7dcb5b", "#368a3f")
         upload_btn.clicked.connect(self.upload_files)
         file_layout.addWidget(upload_btn)
 
@@ -87,7 +87,7 @@ class Dashboard(QWidget):
         self.file_display.setStyleSheet("background-color: #ffffff; border: 1px solid #ccc; padding: 6px;")
         main_layout.addWidget(self.file_display)
 
-    def styled_button(self, text, color="#f2d2b0", hover="#eac37c", large=False):
+    def styled_button(self, text, color="#fea94e", hover="#b96f20", large=False):
         font_size = "13pt" if large else "11pt"
         padding = "12px" if large else "8px"
         btn = QPushButton(text)

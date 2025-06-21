@@ -3,10 +3,12 @@ import json
 import sys
 from collections import defaultdict
 
-from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem
-from PyQt6.QtGui import QPen, QBrush, QColor, QPainterPath
-from PyQt6.QtCore import Qt, QPointF
-
+from PyQt6.QtWidgets import (
+    QApplication, QGraphicsView, QGraphicsScene, QGraphicsTextItem,
+    QGraphicsRectItem, QVBoxLayout, QPushButton, QWidget, QFileDialog
+)
+from PyQt6.QtGui import QPen, QBrush, QColor, QPainterPath, QImage, QPainter
+from PyQt6.QtCore import Qt, QPointF, QRectF
 
 def load_events_from_output():
     output_dir = "output"
@@ -16,7 +18,6 @@ def load_events_from_output():
     json_path = os.path.join(output_dir, json_files[0])
     with open(json_path, 'r') as f:
         return json.load(f)
-
 
 def draw_arrow(scene, start_point, end_point, color=Qt.GlobalColor.black):
     x1, y1 = start_point
@@ -42,9 +43,7 @@ def draw_arrow(scene, start_point, end_point, color=Qt.GlobalColor.black):
     path.closeSubpath()
     scene.addPath(path, pen, QBrush(color))
 
-
 def normalize_label(label):
-    """Extract channel and message type ignoring payload"""
     if '!' in label:
         chan, content = label.split('!', 1)
     elif '?' in label:
@@ -54,100 +53,119 @@ def normalize_label(label):
     msg_type = content.split(',', 1)[0].strip()
     return chan.strip(), msg_type
 
+class MSCViewer(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("SPIN-style Message Sequence Chart")
+        self.resize(1300, 750)
 
-def draw_msc():
-    app = QApplication(sys.argv)
-    scene = QGraphicsScene()
-    view = QGraphicsView(scene)
-    view.setWindowTitle("SPIN-style Message Sequence Chart")
-    view.resize(1200, 700)
+        layout = QVBoxLayout()
+        self.setLayout(layout)
 
-    spacing_x = 160
-    top_y = 50
-    rect_width = 110
-    rect_height = 25
-    y_step = 35
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene)
+        layout.addWidget(self.view)
 
-    events = load_events_from_output()
+        self.save_button = QPushButton("Save as PNG")
+        self.save_button.clicked.connect(self.save_png)
+        layout.addWidget(self.save_button)
 
-    # Ordered list of unique processes
-    processes = list(dict.fromkeys(proc for proc, _ in events))
-    process_positions = {}
+        self.draw_msc()
 
-    for i, proc in enumerate(processes):
-        x = spacing_x * (i + 1)
-        process_positions[proc] = x
-        scene.addLine(x, top_y, x, top_y + 1000, QPen(Qt.GlobalColor.black, 1, Qt.PenStyle.DashLine))
-        label = QGraphicsTextItem(proc if proc else "(init)")
-        label.setPos(x - 35, top_y - 30)
-        scene.addItem(label)
+    def save_png(self):
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save PNG", "msc_chart.png", "PNG Files (*.png)")
+        if file_path:
+            rect = self.scene.itemsBoundingRect()
+            image = QImage(rect.size().toSize(), QImage.Format.Format_ARGB32)
+            image.fill(Qt.GlobalColor.white)
 
-    # Map to track all pending sends by (canonical channel group, msg_type)
-    send_buffer = defaultdict(list)
-    # Map real channel names to canonical equivalents based on usage
-    canonical_channels = {}
+            painter = QPainter(image)
+            self.scene.render(painter, target=QRectF(image.rect()), source=rect)
+            painter.end()
+            image.save(file_path)
 
-    def get_canonical_channel(chan):
-        """Return consistent canonical name for a channel."""
-        return canonical_channels.get(chan, chan)
+    def draw_msc(self):
+        spacing_x = 160
+        top_y = 50
+        rect_width = 110
+        rect_height = 25
+        y_step = 35
 
-    for step, (proc, label) in enumerate(events):
-        y = top_y + step * y_step
-        x = process_positions.get(proc, spacing_x // 2)
+        events = load_events_from_output()
+        processes = list(dict.fromkeys(proc for proc, _ in events))
+        process_positions = {}
 
-        rect = QGraphicsRectItem(x - rect_width / 2, y, rect_width, rect_height)
-        rect.setBrush(QBrush(QColor("pink")))
-        scene.addItem(rect)
+        for i, proc in enumerate(processes):
+            x = spacing_x * (i + 1)
+            process_positions[proc] = x
+            self.scene.addLine(x, top_y, x, top_y + 1000, QPen(Qt.GlobalColor.black, 1, Qt.PenStyle.DashLine))
+            label = QGraphicsTextItem(proc if proc else "(init)")
+            label.setPos(x - 35, top_y - 30)
+            self.scene.addItem(label)
 
-        text = QGraphicsTextItem(label)
-        text.setDefaultTextColor(Qt.GlobalColor.black)
-        text.setPos(x - rect_width / 2 + 5, y + 3)
-        scene.addItem(text)
+        send_buffer = defaultdict(list)
+        canonical_channels = {}
 
-        chan, msg_type = normalize_label(label)
-        if not chan or not msg_type:
-            continue
+        def get_canonical_channel(chan):
+            return canonical_channels.get(chan, chan)
 
-        canon_chan = get_canonical_channel(chan)
+        for step, (proc, label) in enumerate(events):
+            y = top_y + step * y_step
+            x = process_positions.get(proc, spacing_x // 2)
 
-        if '!' in label:
-            key = (canon_chan, msg_type)
-            send_buffer[key].append((proc, step, chan))
-            # If this send uses a new name, associate it with the canonical channel
-            canonical_channels[chan] = canon_chan
+            rect = QGraphicsRectItem(x - rect_width / 2, y, rect_width, rect_height)
+            rect.setBrush(QBrush(QColor("pink")))
+            self.scene.addItem(rect)
 
-        elif '?' in label:
-            key = (canon_chan, msg_type)
-            matched = None
+            text = QGraphicsTextItem(label)
+            text.setDefaultTextColor(Qt.GlobalColor.black)
+            text.setPos(x - rect_width / 2 + 5, y + 3)
+            self.scene.addItem(text)
 
-            if send_buffer[key]:
-                matched = send_buffer[key].pop(0)
+            chan, msg_type = normalize_label(label)
+            if not chan or not msg_type:
+                continue
+
+            canon_chan = get_canonical_channel(chan)
+
+            if '!' in label:
+                key = (canon_chan, msg_type)
+                send_buffer[key].append((proc, step, chan))
                 canonical_channels[chan] = canon_chan
-            else:
-                # No exact match, try fuzzy matching: any key with matching msg_type
-                for (alt_chan, alt_type), queue in send_buffer.items():
-                    if alt_type == msg_type and queue:
-                        matched = queue.pop(0)
-                        canonical_channels[chan] = alt_chan
-                        break
 
-            if matched:
-                send_proc, send_step, send_chan = matched
-                x1 = process_positions[send_proc] + rect_width / 2
-                y1 = top_y + send_step * y_step + rect_height / 2
-                x2 = x - rect_width / 2
-                y2 = y + rect_height / 2
-                draw_arrow(scene, (x1, y1), (x2, y2), QColor("blue"))
-            else:
-                print(f"[!] No send match found for receive: {label} at step {step}")
+            elif '?' in label:
+                key = (canon_chan, msg_type)
+                matched = None
 
-    final_y = top_y + len(events) * y_step + 20
-    scene.addLine(spacing_x // 2, final_y, spacing_x * (len(processes) + 1), final_y,
-                  QPen(QColor("red"), 2, Qt.PenStyle.DashLine))
+                if send_buffer[key]:
+                    matched = send_buffer[key].pop(0)
+                    canonical_channels[chan] = canon_chan
+                else:
+                    for (alt_chan, alt_type), queue in send_buffer.items():
+                        if alt_type == msg_type and queue:
+                            matched = queue.pop(0)
+                            canonical_channels[chan] = alt_chan
+                            break
 
-    view.show()
+                if matched:
+                    send_proc, send_step, send_chan = matched
+                    x1 = process_positions[send_proc] + rect_width / 2
+                    y1 = top_y + send_step * y_step + rect_height / 2
+                    x2 = x - rect_width / 2
+                    y2 = y + rect_height / 2
+                    draw_arrow(self.scene, (x1, y1), (x2, y2), QColor("blue"))
+                else:
+                    print(f"[!] No send match found for receive: {label} at step {step}")
+
+        final_y = top_y + len(events) * y_step + 20
+        self.scene.addLine(spacing_x // 2, final_y, spacing_x * (len(processes) + 1), final_y,
+                           QPen(QColor("red"), 2, Qt.PenStyle.DashLine))
+
+def main():
+    app = QApplication(sys.argv)
+    viewer = MSCViewer()
+    viewer.show()
     sys.exit(app.exec())
 
-
 if __name__ == "__main__":
-    draw_msc()
+    main()
