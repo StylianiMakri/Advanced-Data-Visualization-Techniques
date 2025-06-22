@@ -1,19 +1,24 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QFileDialog, QLabel, QMessageBox, QFrame, QTextEdit, QGroupBox, QSizePolicy
+    QFileDialog, QLabel, QMessageBox, QFrame, QTextEdit, QGroupBox, QSizePolicy, QInputDialog, QMenu
 )
 from PyQt6.QtCore import Qt
+from PyQt6 import QtCore
 import os
 import shutil
 import subprocess
 import sys
+import json
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'output')
+PROFILES_DIR = os.path.join(BASE_DIR, 'profiles')
 
 DATA_EXTENSIONS = {".out", ".trail", ".pml", ".isf", ".txt"}
 OUTPUT_EXTENSIONS = {".json", ".png"}
+
+os.makedirs(PROFILES_DIR, exist_ok=True)
 
 
 def delete_files_by_extension(folder, extensions):
@@ -34,6 +39,7 @@ class Dashboard(QWidget):
         self.setGeometry(100, 100, 500, 600)
         self.setup_ui()
         self.update_data_files_display()
+        self.update_profile_menu()
 
     def setup_ui(self):
         self.setStyleSheet("font-family: Segoe UI, sans-serif; font-size: 10pt; background-color: #f9f9f9;")
@@ -87,6 +93,23 @@ class Dashboard(QWidget):
         self.file_display.setStyleSheet("background-color: #ffffff; border: 1px solid #ccc; padding: 6px;")
         main_layout.addWidget(self.file_display)
 
+        main_layout.addWidget(self.make_line())
+        profile_label = QLabel("Model Profiles")
+        profile_label.setStyleSheet("font-size: 10pt; margin-top: 10px;")
+        main_layout.addWidget(profile_label)
+
+        profile_layout = QHBoxLayout()
+        create_profile_btn = self.styled_button("Create Profile", "#c4a7e7", "#9b6edc")
+        create_profile_btn.clicked.connect(self.create_profile)
+        profile_layout.addWidget(create_profile_btn)
+
+        self.profile_dropdown = QPushButton("Load Profile")
+        self.profile_dropdown.setStyleSheet("padding: 6px;")
+        self.profile_dropdown.clicked.connect(self.load_profile_menu)
+        profile_layout.addWidget(self.profile_dropdown)
+
+        main_layout.addLayout(profile_layout)
+
     def styled_button(self, text, color="#fea94e", hover="#b96f20", large=False):
         font_size = "13pt" if large else "11pt"
         padding = "12px" if large else "8px"
@@ -139,7 +162,6 @@ class Dashboard(QWidget):
         except Exception as e:
             print(f"Error running parsers: {e}")
 
-
     def update_data_files_display(self):
         if not os.path.exists(DATA_DIR):
             self.file_display.setPlainText("No files in /data.")
@@ -163,6 +185,67 @@ class Dashboard(QWidget):
             QMessageBox.information(self, "Success", f"{script_name} launched successfully!")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to launch {script_name}:\n{e}")
+
+    def create_profile(self):
+        name, ok = QInputDialog.getText(self, "Profile Name", "Enter a name for the new profile:")
+        if not ok or not name.strip():
+            return
+        profile_name = name.strip()
+        folder = os.path.join(PROFILES_DIR, profile_name)
+        os.makedirs(folder, exist_ok=True)
+
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Select files for the profile", "",
+            "All Files (*.trail *.pml *.out *.isf *.txt)"
+        )
+        if not files:
+            return
+
+        file_mapping = {}
+        for f in files:
+            ext = os.path.splitext(f)[1].lower()
+            if ext in DATA_EXTENSIONS:
+                dst = os.path.join(folder, os.path.basename(f))
+                try:
+                    shutil.copy(f, dst)
+                    file_mapping[ext] = os.path.basename(f)
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to copy {f}: {e}")
+
+        with open(os.path.join(folder, "profile.json"), "w") as f:
+            json.dump({"name": profile_name, "files": file_mapping}, f, indent=2)
+
+        QMessageBox.information(self, "Success", f"Profile '{profile_name}' created!")
+        self.update_profile_menu()
+
+    def load_profile_menu(self):
+        menu = QMenu()
+        for profile in sorted(os.listdir(PROFILES_DIR)):
+            profile_path = os.path.join(PROFILES_DIR, profile, "profile.json")
+            if os.path.isfile(profile_path):
+                action = menu.addAction(profile)
+                action.triggered.connect(lambda _, p=profile: self.load_profile(p))
+        menu.exec(self.profile_dropdown.mapToGlobal(QtCore.QPoint(0, self.profile_dropdown.height())))
+
+    def load_profile(self, profile_name):
+        profile_folder = os.path.join(PROFILES_DIR, profile_name)
+        metadata_path = os.path.join(profile_folder, "profile.json")
+        if not os.path.exists(metadata_path):
+            QMessageBox.critical(self, "Error", f"Profile '{profile_name}' has no metadata.")
+            return
+
+        delete_files_by_extension(DATA_DIR, DATA_EXTENSIONS)
+
+        for f in os.listdir(profile_folder):
+            if f == "profile.json":
+                continue
+            shutil.copy(os.path.join(profile_folder, f), os.path.join(DATA_DIR, f))
+
+        QMessageBox.information(self, "Loaded", f"Profile '{profile_name}' loaded into /data.")
+        self.update_data_files_display()
+
+    def update_profile_menu(self):
+        pass  # Placeholder if you later add persistent dropdown menu text, etc.
 
 
 if __name__ == "__main__":

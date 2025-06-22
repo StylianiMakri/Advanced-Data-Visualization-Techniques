@@ -6,3 +6,6 @@ spin_tool/data/*
 
 spin_tool/output/*
 !spin_tool/output/.gitkeep
+
+spin_tool/profiles/*
+!spin_tool/profiles/.gitkeep
