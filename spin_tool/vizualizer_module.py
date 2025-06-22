@@ -114,8 +114,8 @@ class SpinVisualizer(QWidget):
 
         colors = [
             QColor("#FFC79A"), QColor("#83D9A1"), QColor("#677697"), QColor("#CE909E"),
-            QColor("#626274"), QColor("#FFF278"), QColor("#4DCC5C"), QColor("#15B4AC"),
-            QColor("#F56F6F"), QColor("#AD6ACA"), QColor("#175B1E"), QColor("#D47A1A"),
+            QColor("#792979"), QColor("#FFF278"), QColor("#4DCC5C"), QColor("#15B4AC"),
+            QColor("#F56F6F"), QColor("#DB9FF4"), QColor("#175B1E"), QColor("#D47A1A"),
             QColor("#0B5D43"), QColor("#7EFFC7"), QColor("#D4CE1A"),
         ]
 

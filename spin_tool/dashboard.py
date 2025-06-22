@@ -295,10 +295,8 @@ class Dashboard(QWidget):
 
                 target_folder = os.path.join(PROFILES_DIR, profile_name)
 
-                # Attempt full deletion
                 shutil.rmtree(target_folder, onerror=on_rm_error)
 
-                # Double-check: if folder remains, remove it manually
                 if os.path.exists(target_folder):
                     try:
                         os.rmdir(target_folder)

@@ -56,7 +56,7 @@ def normalize_label(label):
 class MSCViewer(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("SPIN-style Message Sequence Chart")
+        self.setWindowTitle("Message Sequence Chart")
         self.resize(1300, 750)
 
         layout = QVBoxLayout()
