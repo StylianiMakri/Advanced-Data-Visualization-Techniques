@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QFileDialog, QLabel, QMessageBox, QFrame, QTextEdit, QGroupBox, QSizePolicy, QInputDialog, QMenu
+    QFileDialog, QLabel, QMessageBox, QFrame, QTextEdit, QGroupBox,
+    QSizePolicy, QInputDialog, QMenu
 )
 from PyQt6.QtCore import Qt
 from PyQt6 import QtCore
@@ -9,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import json
+import stat
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
@@ -56,6 +58,43 @@ class Dashboard(QWidget):
         clear_btn.clicked.connect(self.clear_data_and_output)
         file_layout.addWidget(clear_btn)
         main_layout.addLayout(file_layout)
+
+        main_layout.addWidget(self.make_line())
+        profile_label = QLabel("Model Profiles")
+        profile_label.setStyleSheet("font-size: 10pt; margin-top: 10px;")
+        main_layout.addWidget(profile_label)
+
+        profile_layout = QHBoxLayout()
+        create_profile_btn = self.styled_button("Create Model Profile", "#c4a7e7", "#9b6edc")
+        create_profile_btn.clicked.connect(self.create_profile)
+        profile_layout.addWidget(create_profile_btn)
+
+        load_profile_btn = self.styled_button("Load Model Profile", "#fcae8a", "#d47b3f")
+        load_profile_btn.clicked.connect(self.load_profile_menu)
+        self.profile_dropdown = load_profile_btn 
+        profile_layout.addWidget(load_profile_btn)
+
+        delete_profile_btn = QPushButton("🗑")
+        delete_profile_btn.setFixedSize(28, 28)
+        delete_profile_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f39c12;
+                color: white;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #e67e22;
+            }
+        """)
+        delete_profile_btn.setToolTip("Delete a saved profile")
+        delete_profile_btn.clicked.connect(self.delete_profile_menu)
+        profile_layout.addWidget(delete_profile_btn)
+
+
+        main_layout.addLayout(profile_layout)
+
         main_layout.addWidget(self.make_line())
 
         parser_label = QLabel("Run Parser")
@@ -84,6 +123,7 @@ class Dashboard(QWidget):
             module_layout.addLayout(row_layout)
         module_group.setLayout(module_layout)
         main_layout.addWidget(module_group)
+
         main_layout.addWidget(self.make_line())
 
         main_layout.addWidget(QLabel("Files in /data:"))
@@ -92,23 +132,6 @@ class Dashboard(QWidget):
         self.file_display.setFixedHeight(150)
         self.file_display.setStyleSheet("background-color: #ffffff; border: 1px solid #ccc; padding: 6px;")
         main_layout.addWidget(self.file_display)
-
-        main_layout.addWidget(self.make_line())
-        profile_label = QLabel("Model Profiles")
-        profile_label.setStyleSheet("font-size: 10pt; margin-top: 10px;")
-        main_layout.addWidget(profile_label)
-
-        profile_layout = QHBoxLayout()
-        create_profile_btn = self.styled_button("Create Profile", "#c4a7e7", "#9b6edc")
-        create_profile_btn.clicked.connect(self.create_profile)
-        profile_layout.addWidget(create_profile_btn)
-
-        self.profile_dropdown = QPushButton("Load Profile")
-        self.profile_dropdown.setStyleSheet("padding: 6px;")
-        self.profile_dropdown.clicked.connect(self.load_profile_menu)
-        profile_layout.addWidget(self.profile_dropdown)
-
-        main_layout.addLayout(profile_layout)
 
     def styled_button(self, text, color="#fea94e", hover="#b96f20", large=False):
         font_size = "13pt" if large else "11pt"
@@ -244,8 +267,55 @@ class Dashboard(QWidget):
         QMessageBox.information(self, "Loaded", f"Profile '{profile_name}' loaded into /data.")
         self.update_data_files_display()
 
+    def delete_profile_menu(self):
+        menu = QMenu()
+        for profile in sorted(os.listdir(PROFILES_DIR)):
+            profile_path = os.path.join(PROFILES_DIR, profile, "profile.json")
+            if os.path.isfile(profile_path):
+                action = menu.addAction(profile)
+                action.triggered.connect(lambda _, p=profile: self.confirm_delete_profile(p))
+        menu.exec(self.sender().mapToGlobal(QtCore.QPoint(0, self.sender().height())))
+
+
+    def confirm_delete_profile(self, profile_name):
+        reply = QMessageBox.question(
+            self,
+            "Delete Profile",
+            f"Are you sure you want to delete the profile '{profile_name}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                def on_rm_error(func, path, exc_info):
+                    try:
+                        os.chmod(path, stat.S_IWRITE)
+                        func(path)
+                    except Exception as e:
+                        print(f"Retry failed for {path}: {e}")
+
+                target_folder = os.path.join(PROFILES_DIR, profile_name)
+
+                # Attempt full deletion
+                shutil.rmtree(target_folder, onerror=on_rm_error)
+
+                # Double-check: if folder remains, remove it manually
+                if os.path.exists(target_folder):
+                    try:
+                        os.rmdir(target_folder)
+                    except Exception as e:
+                        QMessageBox.warning(self, "Partial Delete",
+                            f"Files deleted, but folder could not be removed:\n{target_folder}\nError: {e}")
+                        return
+
+                QMessageBox.information(self, "Deleted", f"Profile '{profile_name}' was fully deleted.")
+                self.update_profile_menu()
+
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to delete profile:\n{e}")
+
+
     def update_profile_menu(self):
-        pass  # Placeholder if you later add persistent dropdown menu text, etc.
+        pass 
 
 
 if __name__ == "__main__":
