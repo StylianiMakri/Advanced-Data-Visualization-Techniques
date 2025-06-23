@@ -3,7 +3,7 @@ import os
 import networkx as nx
 import plotly.graph_objs as go
 import plotly.io as pio
-import community as community_louvain
+import community as community_louvain  # python-louvain package
 
 # Open Plotly in the browser
 pio.renderers.default = "browser"
@@ -38,33 +38,54 @@ nx.set_node_attributes(G, partition, 'cluster')
 cluster_ids = set(partition.values())
 palette = [
     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
-    "#9467bd", "#8c564b", "#e377c2", "#B819B3",
-    "#bcbd22", "#17becf",  "#50411C", "#22126F", "#538548", "#1D9E9A", "#4E1011"
+    "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
+    "#bcbd22", "#17becf"
 ]
 cluster_color_map = {cid: palette[i % len(palette)] for i, cid in enumerate(sorted(cluster_ids))}
 
+# Colors for start and end
+color_start = "#0074D9"  # blue
+color_end = "#2ECC40"    # green
 
-process_names = set(nx.get_node_attributes(G, "proc").values())
-process_palette = [
-     "#636EFA", "#EF553B", "#00CC96", "#AB63FA",
-     "#FFA15A", "#F3193D", "#EDF161", "#B6E880",
-     "#50411C", "#22126F", "#538548", "#1D9E9A", "#4E1011", "#760DDF"
- ]
-process_color_map = {pname: process_palette[i % len(process_palette)] for i, pname in enumerate(sorted(process_names))}
+first_step = min(step['step'] for step in trail_data)
+last_step = max(step['step'] for step in trail_data)
 
+x, y, z = [], [], []
+text = []       # permanent labels ("START", "END")
+hovertext = []  # hover tooltips for all nodes
+color = []
+marker_size = []
 
-x, y, z, text, color = [], [], [], [], []
 for node, attrs in G.nodes(data=True):
     x.append(pos[node][0])
     y.append(pos[node][1])
     z.append(pos[node][2])
-    text.append(f"{node}: {attrs['label']} ({attrs['proc']}), Cluster: {attrs['cluster']}, Step: {attrs['step']}")
 
-    # Color by cluster
-    color.append(cluster_color_map.get(attrs['cluster'], "#888"))
+    step_num = attrs['step']
+    label = attrs['label']
+    proc = attrs['proc']
+    cluster = attrs['cluster']
 
-    # To color by process instead, uncomment below and comment out the line above
-    # color.append(process_color_map.get(attrs['proc'], "#888"))
+    base_hover = f"{node}: {label} ({proc}), Cluster: {cluster}, Step: {step_num}"
+
+    # Start node
+    if step_num == first_step:
+        node_color = color_start
+        size = 15
+        text.append("START")
+    # End node
+    elif step_num == last_step:
+        node_color = color_end
+        size = 15
+        text.append("END")
+    else:
+        node_color = cluster_color_map.get(cluster, "#888")
+        size = 10
+        text.append("")  # no permanent label
+
+    hovertext.append(base_hover)
+    color.append(node_color)
+    marker_size.append(size)
 
 # Prepare edges
 edge_x, edge_y, edge_z = [], [], []
@@ -73,7 +94,7 @@ for src, dst in G.edges():
     edge_y += [pos[src][1], pos[dst][1], None]
     edge_z += [pos[src][2], pos[dst][2], None]
 
-# Create Plotly figure without slider
+# Create Plotly figure
 fig = go.Figure([
     go.Scatter3d(
         x=edge_x, y=edge_y, z=edge_z,
@@ -83,10 +104,13 @@ fig = go.Figure([
     ),
     go.Scatter3d(
         x=x, y=y, z=z,
-        mode="markers",
-        marker=dict(size=5, color=color),
+        mode="markers+text",
+        marker=dict(size=marker_size, color=color),
         text=text,
-        hoverinfo="text"
+        hovertext=hovertext,
+        hoverinfo="text",
+        textposition="top center",
+        textfont=dict(size=12, color="black"),
     )
 ])
 
