@@ -1,6 +1,7 @@
 output_visualizer/
 start_ispin/
 converter/
+launch/
 spin_tool/data/*
 !spin_tool/data/.gitkeep
 
