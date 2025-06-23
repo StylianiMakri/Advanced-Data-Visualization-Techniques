@@ -112,7 +112,7 @@ class Dashboard(QWidget):
         rows = [
             [("Visualizer", "vizualizer_module.py"), ("Timeline", "timeline_evolved.py")],
             [("MSC Maker", "msc_maker_80.py"), ("Overview", "overview.py")],
-            [("Out Viewer", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")]
+            [("Out Viewer", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py"),]
         ]
         for row in rows:
             row_layout = QHBoxLayout()
