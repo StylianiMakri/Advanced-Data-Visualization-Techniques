@@ -6,18 +6,15 @@ import plotly.io as pio
 
 pio.renderers.default = "browser"
 
-# Load trail data
 parsed_data_path = os.path.join("output", "parsed_data.json")
 with open(parsed_data_path, "r") as f:
     data = json.load(f)
 
 trail_data = data["trail"]
 
-# Unique process list and mapping
 process_names = sorted(set(step['proc_name'] for step in trail_data))
 proc_to_z = {proc: i for i, proc in enumerate(process_names)}
 
-# Color map for each process
 palette = [
     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
     "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
@@ -25,7 +22,6 @@ palette = [
 ]
 proc_color_map = {proc: palette[i % len(palette)] for i, proc in enumerate(process_names)}
 
-# Build graph
 G = nx.DiGraph()
 for step in trail_data:
     sid = f"s{step['step']}"
@@ -38,14 +34,12 @@ for i in range(1, len(trail_data)):
     curr_sid = f"s{trail_data[i]['step']}"
     G.add_edge(prev_sid, curr_sid)
 
-# Group node traces per process
 node_traces = []
 edge_traces = []
 
 first_step = min(step['step'] for step in trail_data)
 last_step = max(step['step'] for step in trail_data)
 
-# Generate node traces by process
 for proc in process_names:
     x, y, z = [], [], []
     text, hovertext, color, marker_size = [], [], [], []
@@ -78,7 +72,6 @@ for proc in process_names:
         visible=True  # Start with all visible
     ))
 
-# Single edge trace
 edge_x, edge_y, edge_z = [], [], []
 for src, dst in G.edges():
     edge_x += [G.nodes[src]['step'], G.nodes[dst]['step'], None]
@@ -95,7 +88,6 @@ edge_trace = go.Scatter3d(
 )
 edge_traces.append(edge_trace)
 
-# Dropdown buttons
 dropdown_buttons = [
     {
         "label": "All Processes",
@@ -120,7 +112,6 @@ for i, proc in enumerate(process_names):
         ]
     })
 
-# Combine and plot
 fig = go.Figure(data=edge_traces + node_traces)
 
 fig.update_layout(
