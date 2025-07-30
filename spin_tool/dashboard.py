@@ -1,3 +1,4 @@
+
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QFileDialog, QLabel, QMessageBox, QFrame, QTextEdit, QGroupBox,
@@ -211,7 +212,7 @@ class Dashboard(QWidget):
     def run_script(self, script_name):
         try:
             subprocess.Popen([sys.executable, script_name])
-            QMessageBox.information(self, "Running", f"{script_name} launched.")
+            #QMessageBox.information(self, "Running", f"{script_name} launched.")
         except Exception as e:
             QMessageBox.critical(self, "Execution Failed", f"Could not launch {script_name}:\n{e}")
 

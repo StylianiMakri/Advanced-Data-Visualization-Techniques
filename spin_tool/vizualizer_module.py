@@ -69,6 +69,7 @@ class SpinVisualizer(QWidget):
         search_layout.addWidget(self.export_html_btn)
 
         layout.addLayout(search_layout)
+        
 
         splitter = QSplitter(Qt.Orientation.Vertical)
 
