@@ -3,120 +3,147 @@ import os
 import networkx as nx
 import plotly.graph_objs as go
 import plotly.io as pio
-import community as community_louvain  # python-louvain package
-
 
 pio.renderers.default = "browser"
 
+# Load trail data
 parsed_data_path = os.path.join("output", "parsed_data.json")
 with open(parsed_data_path, "r") as f:
     data = json.load(f)
 
 trail_data = data["trail"]
 
-G = nx.DiGraph()
-for step in trail_data:
-    sid = f"s{step['step']}"
-    label = f"P{step['proc_id']}@{step['line']}"
-    G.add_node(sid, label=label, proc=step["proc_name"], step=step['step'])
+# Unique process list and mapping
+process_names = sorted(set(step['proc_name'] for step in trail_data))
+proc_to_z = {proc: i for i, proc in enumerate(process_names)}
 
-for i in range(1, len(trail_data)):
-    prev_sid = f"s{trail_data[i - 1]['step']}"
-    curr_sid = f"s{trail_data[i]['step']}"
-    G.add_edge(prev_sid, curr_sid, action=f"{trail_data[i - 1]['proc_name']} → {trail_data[i]['proc_name']}")
-
-pos = nx.spring_layout(G, dim=3, seed=42)
-
-#Louvain clustering
-partition = community_louvain.best_partition(G.to_undirected())
-nx.set_node_attributes(G, partition, 'cluster')
-
-
-cluster_ids = set(partition.values())
+# Color map for each process
 palette = [
     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
     "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
     "#bcbd22", "#17becf"
 ]
-cluster_color_map = {cid: palette[i % len(palette)] for i, cid in enumerate(sorted(cluster_ids))}
+proc_color_map = {proc: palette[i % len(palette)] for i, proc in enumerate(process_names)}
 
+# Build graph
+G = nx.DiGraph()
+for step in trail_data:
+    sid = f"s{step['step']}"
+    label = f"P{step['proc_id']}@{step['line']}"
+    depth = step.get('depth', 0)
+    G.add_node(sid, label=label, proc=step['proc_name'], step=step['step'], depth=depth)
 
-color_start = "#0074D9" 
-color_end = "#2ECC40"    
+for i in range(1, len(trail_data)):
+    prev_sid = f"s{trail_data[i - 1]['step']}"
+    curr_sid = f"s{trail_data[i]['step']}"
+    G.add_edge(prev_sid, curr_sid)
+
+# Group node traces per process
+node_traces = []
+edge_traces = []
 
 first_step = min(step['step'] for step in trail_data)
 last_step = max(step['step'] for step in trail_data)
 
-x, y, z = [], [], []
-text = []       # permanent labels ("START", "END")
-hovertext = []  
-color = []
-marker_size = []
+# Generate node traces by process
+for proc in process_names:
+    x, y, z = [], [], []
+    text, hovertext, color, marker_size = [], [], [], []
+    
+    for node, attrs in G.nodes(data=True):
+        if attrs['proc'] != proc:
+            continue
+        step = attrs['step']
+        depth = attrs['depth']
+        z_val = proc_to_z[proc]
 
-for node, attrs in G.nodes(data=True):
-    x.append(pos[node][0])
-    y.append(pos[node][1])
-    z.append(pos[node][2])
-
-    step_num = attrs['step']
-    label = attrs['label']
-    proc = attrs['proc']
-    cluster = attrs['cluster']
-
-    base_hover = f"{node}: {label} ({proc}), Cluster: {cluster}, Step: {step_num}"
-
-    # Start node
-    if step_num == first_step:
-        node_color = color_start
-        size = 15
-        text.append("START")
-    # End node
-    elif step_num == last_step:
-        node_color = color_end
-        size = 15
-        text.append("END")
-    else:
-        node_color = cluster_color_map.get(cluster, "#888")
-        size = 10
-        text.append("")
-
-    hovertext.append(base_hover)
-    color.append(node_color)
-    marker_size.append(size)
-
-edge_x, edge_y, edge_z = [], [], []
-for src, dst in G.edges():
-    edge_x += [pos[src][0], pos[dst][0], None]
-    edge_y += [pos[src][1], pos[dst][1], None]
-    edge_z += [pos[src][2], pos[dst][2], None]
-
-fig = go.Figure([
-    go.Scatter3d(
-        x=edge_x, y=edge_y, z=edge_z,
-        mode="lines",
-        line=dict(color="gray", width=2),
-        hoverinfo="none"
-    ),
-    go.Scatter3d(
+        x.append(step)
+        y.append(depth)
+        z.append(z_val)
+        hovertext.append(f"Step {step} | Proc: {proc} | Depth: {depth} | Label: {attrs['label']}")
+        marker_size.append(12 if step in (first_step, last_step) else 8)
+        text.append("START" if step == first_step else "END" if step == last_step else "")
+        color.append(proc_color_map[proc])
+    
+    node_traces.append(go.Scatter3d(
         x=x, y=y, z=z,
         mode="markers+text",
+        name=proc,
         marker=dict(size=marker_size, color=color),
         text=text,
         hovertext=hovertext,
         hoverinfo="text",
         textposition="top center",
         textfont=dict(size=12, color="black"),
-    )
-])
+        visible=True  # Start with all visible
+    ))
+
+# Single edge trace
+edge_x, edge_y, edge_z = [], [], []
+for src, dst in G.edges():
+    edge_x += [G.nodes[src]['step'], G.nodes[dst]['step'], None]
+    edge_y += [G.nodes[src]['depth'], G.nodes[dst]['depth'], None]
+    edge_z += [proc_to_z[G.nodes[src]['proc']], proc_to_z[G.nodes[dst]['proc']], None]
+
+edge_trace = go.Scatter3d(
+    x=edge_x, y=edge_y, z=edge_z,
+    mode="lines",
+    line=dict(color="gray", width=2),
+    hoverinfo="none",
+    name="Edges",
+    visible=True
+)
+edge_traces.append(edge_trace)
+
+# Dropdown buttons
+dropdown_buttons = [
+    {
+        "label": "All Processes",
+        "method": "update",
+        "args": [
+            {"visible": [True] * (len(node_traces) + 1)},  # all nodes + edges
+            {"title": "All Processes"}
+        ]
+    }
+]
+
+for i, proc in enumerate(process_names):
+    visibility = [False] * (len(node_traces) + 1)
+    visibility[i] = True  # show only this process' nodes
+    visibility[-1] = True  # always show edges
+    dropdown_buttons.append({
+        "label": proc,
+        "method": "update",
+        "args": [
+            {"visible": visibility},
+            {"title": f"Process: {proc}"}
+        ]
+    })
+
+# Combine and plot
+fig = go.Figure(data=edge_traces + node_traces)
 
 fig.update_layout(
-    title="3D SPIN Trail State Space",
+    title="SPIN Trail Visualization (Step x Depth x Process)",
     scene=dict(
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=False),
-        zaxis=dict(showgrid=False)
+        xaxis=dict(title="Step"),
+        yaxis=dict(title="Depth"),
+        zaxis=dict(
+            title="Process",
+            tickvals=list(proc_to_z.values()),
+            ticktext=list(proc_to_z.keys())
+        )
     ),
-    margin=dict(l=0, r=0, b=0, t=30)
+    updatemenus=[{
+        "buttons": dropdown_buttons,
+        "direction": "down",
+        "showactive": True,
+        "x": 0.0,
+        "y": 1.15,
+        "xanchor": "left",
+        "yanchor": "top"
+    }],
+    margin=dict(l=0, r=0, b=0, t=40)
 )
 
 fig.show()

@@ -38,82 +38,85 @@ class Dashboard(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SPIN Tool Dashboard")
-        self.setGeometry(100, 100, 500, 600)
+        self.setGeometry(100, 100, 540, 680)
         self.setup_ui()
         self.update_data_files_display()
         self.update_profile_menu()
 
     def setup_ui(self):
-        self.setStyleSheet("font-family: Segoe UI, sans-serif; font-size: 10pt; background-color: #f9f9f9;")
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f4f6f9;
+                font-family: 'Segoe UI', 'Roboto', sans-serif;
+                font-size: 10.5pt;
+                color: #2e3a59;
+            }
+            QLabel {
+                font-weight: 600;
+            }
+            QTextEdit {
+                background-color: #ffffff;
+                border: 1px solid #dcdfe6;
+                border-radius: 6px;
+                padding: 8px;
+            }
+        """)
+
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        main_layout.addWidget(QLabel("File Operations"))
-        file_layout = QHBoxLayout()
-        upload_btn = self.styled_button("Upload Files", "#7dcb5b", "#368a3f")
+        # --- File Operations ---
+        main_layout.addWidget(self.section_label("File Operations"))
+        file_ops = self.card_frame()
+        file_layout = QHBoxLayout(file_ops)
+        upload_btn = self.styled_button("Upload Files", "#3A7AFE", "#2C5DC1")
         upload_btn.clicked.connect(self.upload_files)
         file_layout.addWidget(upload_btn)
 
-        clear_btn = self.styled_button("Clear Files", "#e74c3c", "#c0392b")
+        clear_btn = self.styled_button("Clear Files", "#d9534f", "#c9302c")
         clear_btn.clicked.connect(self.clear_data_and_output)
         file_layout.addWidget(clear_btn)
-        main_layout.addLayout(file_layout)
+        main_layout.addWidget(file_ops)
 
-        main_layout.addWidget(self.make_line())
-        profile_label = QLabel("Model Profiles")
-        profile_label.setStyleSheet("font-size: 10pt; margin-top: 10px;")
-        main_layout.addWidget(profile_label)
+        # --- Profile Management ---
+        main_layout.addWidget(self.section_label("Model Profiles"))
+        profile_frame = self.card_frame()
+        profile_layout = QHBoxLayout(profile_frame)
 
-        profile_layout = QHBoxLayout()
-        create_profile_btn = self.styled_button("Create Model Profile", "#c4a7e7", "#9b6edc")
+        create_profile_btn = self.styled_button("Create Model Profile")
         create_profile_btn.clicked.connect(self.create_profile)
         profile_layout.addWidget(create_profile_btn)
 
-        load_profile_btn = self.styled_button("Load Model Profile", "#fcae8a", "#d47b3f")
+        load_profile_btn = self.styled_button("Load Model Profile")
         load_profile_btn.clicked.connect(self.load_profile_menu)
-        self.profile_dropdown = load_profile_btn 
+        self.profile_dropdown = load_profile_btn
         profile_layout.addWidget(load_profile_btn)
 
-        delete_profile_btn = QPushButton("🗑")
-        delete_profile_btn.setFixedSize(28, 28)
-        delete_profile_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #f39c12;
-                color: white;
-                border-radius: 5px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #e67e22;
-            }
-        """)
-        delete_profile_btn.setToolTip("Delete a saved profile")
+        delete_profile_btn = self.styled_button("Delete Profile", "#e0e0e0", "#cccccc")
+        delete_profile_btn.setFixedWidth(130)
         delete_profile_btn.clicked.connect(self.delete_profile_menu)
         profile_layout.addWidget(delete_profile_btn)
 
+        main_layout.addWidget(profile_frame)
 
-        main_layout.addLayout(profile_layout)
-
-        main_layout.addWidget(self.make_line())
-
-        parser_label = QLabel("Run Parser")
-        parser_label.setStyleSheet("font-size: 10pt; margin-top: 10px;")
-        main_layout.addWidget(parser_label)
-
-        parser_btn = self.styled_button("Run Parser Module", "#8ad5e6", "#369095", large=True)
+        # --- Run Parser ---
+        main_layout.addWidget(self.section_label("Run Parser"))
+        parser_frame = self.card_frame()
+        parser_layout = QVBoxLayout(parser_frame)
+        parser_btn = self.styled_button("Run Parser Module", large=True)
         parser_btn.clicked.connect(self.run_parsers)
-        main_layout.addWidget(parser_btn)
+        parser_layout.addWidget(parser_btn)
+        main_layout.addWidget(parser_frame)
 
-        main_layout.addWidget(self.make_line())
-
-        module_group = QGroupBox("Analysis Modules")
-        module_layout = QVBoxLayout()
+        # --- Analysis Modules ---
+        main_layout.addWidget(self.section_label("Analysis Modules"))
+        module_frame = self.card_frame()
+        module_layout = QVBoxLayout(module_frame)
         rows = [
             [("Visualizer", "vizualizer_module.py"), ("Timeline", "timeline_evolved.py")],
             [("MSC Maker", "msc_maker_80.py"), ("Overview", "overview.py")],
             [("Out Viewer", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")],
-            [("3D State Graph", "3D_statespace_module.py")] 
+            [("3D State Graph", "3D_statespace_module.py")]
         ]
         for row in rows:
             row_layout = QHBoxLayout()
@@ -122,27 +125,25 @@ class Dashboard(QWidget):
                 btn.clicked.connect(lambda _, s=script: self.run_script(s))
                 row_layout.addWidget(btn)
             module_layout.addLayout(row_layout)
-        module_group.setLayout(module_layout)
-        main_layout.addWidget(module_group)
+        main_layout.addWidget(module_frame)
 
-        main_layout.addWidget(self.make_line())
-
-        main_layout.addWidget(QLabel("Files in /data:"))
+        # --- Data Files Display ---
+        main_layout.addWidget(self.section_label("Files in /data:"))
         self.file_display = QTextEdit()
         self.file_display.setReadOnly(True)
         self.file_display.setFixedHeight(150)
-        self.file_display.setStyleSheet("background-color: #ffffff; border: 1px solid #ccc; padding: 6px;")
         main_layout.addWidget(self.file_display)
 
-    def styled_button(self, text, color="#fea94e", hover="#b96f20", large=False):
-        font_size = "13pt" if large else "11pt"
-        padding = "12px" if large else "8px"
+    # --- UI Helpers ---
+    def styled_button(self, text, color="#3A7AFE", hover="#2C5DC1", large=False):
+        font_size = "11pt" if large else "10pt"
+        padding = "10px" if large else "6px"
         btn = QPushButton(text)
         btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {color};
-                color: black;
-                font-weight: bold;
+                color: white;
+                font-weight: 500;
                 font-size: {font_size};
                 border: none;
                 border-radius: 6px;
@@ -155,47 +156,37 @@ class Dashboard(QWidget):
         btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         return btn
 
-    def make_line(self):
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setFrameShadow(QFrame.Shadow.Sunken)
-        return line
+    def section_label(self, text):
+        label = QLabel(text)
+        label.setStyleSheet("font-size: 11.5pt; font-weight: bold; margin-top: 10px;")
+        return label
 
+    def card_frame(self):
+        frame = QFrame()
+        frame.setFrameShape(QFrame.Shape.StyledPanel)
+        frame.setStyleSheet("""
+            QFrame {
+                background-color: #ffffff;
+                border: 1px solid #e0e6ed;
+                border-radius: 8px;
+                padding: 12px;
+            }
+        """)
+        return frame
+
+    # --- Core Functionality ---
     def upload_files(self):
-        files, _ = QFileDialog.getOpenFileNames(
-            self, "Select .trail, .pml, .isf and .out files", "",
-            "All Files (*.trail *.pml *.out *.isf *.txt)"
-        )
+        files, _ = QFileDialog.getOpenFileNames(self, "Select Files", "", "All Files (*.trail *.pml *.out *.isf *.txt)")
         if not files:
             return
-
         os.makedirs(DATA_DIR, exist_ok=True)
         for file in files:
             try:
                 shutil.copy(file, DATA_DIR)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Could not copy file: {e}")
-
-        QMessageBox.information(self, "Success", "Files uploaded to 'data' folder")
+        QMessageBox.information(self, "Success", "Files uploaded to /data")
         self.update_data_files_display()
-
-    def run_parsers(self):
-        try:
-            self.run_script("parser_module.py")
-            self.run_script("parser_msc.py")
-        except Exception as e:
-            print(f"Error running parsers: {e}")
-
-    def update_data_files_display(self):
-        if not os.path.exists(DATA_DIR):
-            self.file_display.setPlainText("No files in /data.")
-            return
-
-        files = [
-            f for f in os.listdir(DATA_DIR)
-            if os.path.splitext(f)[1].lower() in DATA_EXTENSIONS
-        ]
-        self.file_display.setPlainText("\n".join(sorted(files)) if files else "No files selected.")
 
     def clear_data_and_output(self):
         delete_files_by_extension(DATA_DIR, DATA_EXTENSIONS)
@@ -203,25 +194,36 @@ class Dashboard(QWidget):
         QMessageBox.information(self, "Cleared", "Data and output files cleared.")
         self.update_data_files_display()
 
+    def update_data_files_display(self):
+        if not os.path.exists(DATA_DIR):
+            self.file_display.setPlainText("No files in /data.")
+            return
+        files = [f for f in os.listdir(DATA_DIR) if os.path.splitext(f)[1].lower() in DATA_EXTENSIONS]
+        self.file_display.setPlainText("\n".join(sorted(files)) if files else "No files selected.")
+
+    def run_parsers(self):
+        try:
+            self.run_script("parser_module.py")
+            self.run_script("parser_msc.py")
+        except Exception as e:
+            QMessageBox.critical(self, "Parser Error", str(e))
+
     def run_script(self, script_name):
         try:
             subprocess.Popen([sys.executable, script_name])
-            QMessageBox.information(self, "Success", f"{script_name} launched successfully!")
+            QMessageBox.information(self, "Running", f"{script_name} launched.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to launch {script_name}:\n{e}")
+            QMessageBox.critical(self, "Execution Failed", f"Could not launch {script_name}:\n{e}")
 
     def create_profile(self):
-        name, ok = QInputDialog.getText(self, "Profile Name", "Enter a name for the new profile:")
+        name, ok = QInputDialog.getText(self, "Profile Name", "Enter profile name:")
         if not ok or not name.strip():
             return
         profile_name = name.strip()
         folder = os.path.join(PROFILES_DIR, profile_name)
         os.makedirs(folder, exist_ok=True)
 
-        files, _ = QFileDialog.getOpenFileNames(
-            self, "Select files for the profile", "",
-            "All Files (*.trail *.pml *.out *.isf *.txt)"
-        )
+        files, _ = QFileDialog.getOpenFileNames(self, "Select files for profile", "", "All Files (*.trail *.pml *.out *.isf *.txt)")
         if not files:
             return
 
@@ -239,7 +241,7 @@ class Dashboard(QWidget):
         with open(os.path.join(folder, "profile.json"), "w") as f:
             json.dump({"name": profile_name, "files": file_mapping}, f, indent=2)
 
-        QMessageBox.information(self, "Success", f"Profile '{profile_name}' created!")
+        QMessageBox.information(self, "Success", f"Profile '{profile_name}' created.")
         self.update_profile_menu()
 
     def load_profile_menu(self):
@@ -277,14 +279,9 @@ class Dashboard(QWidget):
                 action.triggered.connect(lambda _, p=profile: self.confirm_delete_profile(p))
         menu.exec(self.sender().mapToGlobal(QtCore.QPoint(0, self.sender().height())))
 
-
     def confirm_delete_profile(self, profile_name):
-        reply = QMessageBox.question(
-            self,
-            "Delete Profile",
-            f"Are you sure you want to delete the profile '{profile_name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        reply = QMessageBox.question(self, "Delete Profile", f"Delete profile '{profile_name}'?",
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             try:
                 def on_rm_error(func, path, exc_info):
@@ -294,27 +291,14 @@ class Dashboard(QWidget):
                     except Exception as e:
                         print(f"Retry failed for {path}: {e}")
 
-                target_folder = os.path.join(PROFILES_DIR, profile_name)
-
-                shutil.rmtree(target_folder, onerror=on_rm_error)
-
-                if os.path.exists(target_folder):
-                    try:
-                        os.rmdir(target_folder)
-                    except Exception as e:
-                        QMessageBox.warning(self, "Partial Delete",
-                            f"Files deleted, but folder could not be removed:\n{target_folder}\nError: {e}")
-                        return
-
-                QMessageBox.information(self, "Deleted", f"Profile '{profile_name}' was fully deleted.")
+                shutil.rmtree(os.path.join(PROFILES_DIR, profile_name), onerror=on_rm_error)
                 self.update_profile_menu()
-
+                QMessageBox.information(self, "Deleted", f"Profile '{profile_name}' deleted.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to delete profile:\n{e}")
 
-
     def update_profile_menu(self):
-        pass 
+        pass  # You can add updates here later
 
 
 if __name__ == "__main__":
