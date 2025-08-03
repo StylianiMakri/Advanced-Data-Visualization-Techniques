@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 class TimelineCanvas(FigureCanvas):
     def __init__(self, trail_data):
-        self.fig = Figure(figsize=(30, 6))
+        self.fig = Figure(figsize=(40, 6))
         super().__init__(self.fig)
         self.ax = self.fig.add_subplot(111)
         self.trail_data = trail_data
@@ -52,7 +52,7 @@ class TimelineViewer(QMainWindow):
     def __init__(self, trail_data):
         super().__init__()
         self.setWindowTitle("SPIN Process Timeline Viewer")
-        self.resize(1000, 600)
+        self.resize(1500, 500)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()

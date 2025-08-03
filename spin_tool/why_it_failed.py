@@ -121,8 +121,11 @@ class TimelineWidget(QGraphicsView):
             x = step * 20
             y = y_map[proc] * y_spacing
 
+            is_last = idx == len(transitions)
+            color = QColor("red") if is_last else QColor("blue")
+
             dot = QGraphicsEllipseItem(QRectF(x - dot_radius, y - dot_radius, dot_radius * 3, dot_radius * 3))
-            dot.setBrush(QBrush(QColor("blue")))
+            dot.setBrush(QBrush(color))
             dot.setPen(QPen(Qt.GlobalColor.black))
             self.scene.addItem(dot)
 
@@ -130,6 +133,7 @@ class TimelineWidget(QGraphicsView):
             label.setDefaultTextColor(Qt.GlobalColor.darkGray)
             label.setPos(x - 5, y - 20)
             self.scene.addItem(label)
+
 
         for proc, idx in y_map.items():
             label = QGraphicsTextItem(f"proc {proc}")

@@ -1,4 +1,3 @@
-
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QFileDialog, QLabel, QMessageBox, QFrame, QTextEdit, QGroupBox,
@@ -66,7 +65,6 @@ class Dashboard(QWidget):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        # --- File Operations ---
         main_layout.addWidget(self.section_label("File Operations"))
         file_ops = self.card_frame()
         file_layout = QHBoxLayout(file_ops)
@@ -79,7 +77,6 @@ class Dashboard(QWidget):
         file_layout.addWidget(clear_btn)
         main_layout.addWidget(file_ops)
 
-        # --- Profile Management ---
         main_layout.addWidget(self.section_label("Model Profiles"))
         profile_frame = self.card_frame()
         profile_layout = QHBoxLayout(profile_frame)
@@ -100,7 +97,6 @@ class Dashboard(QWidget):
 
         main_layout.addWidget(profile_frame)
 
-        # --- Run Parser ---
         main_layout.addWidget(self.section_label("Run Parser"))
         parser_frame = self.card_frame()
         parser_layout = QVBoxLayout(parser_frame)
@@ -109,14 +105,13 @@ class Dashboard(QWidget):
         parser_layout.addWidget(parser_btn)
         main_layout.addWidget(parser_frame)
 
-        # --- Analysis Modules ---
         main_layout.addWidget(self.section_label("Analysis Modules"))
         module_frame = self.card_frame()
         module_layout = QVBoxLayout(module_frame)
         rows = [
             [("Visualizer", "vizualizer_module.py"), ("Timeline", "timeline_evolved.py")],
             [("MSC Maker", "msc_maker_80.py"), ("3D State Graph", "3D_statespace_module.py")],
-            [("Out Viewer", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")]
+            [("Overview", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")]
         ]
         for row in rows:
             row_layout = QHBoxLayout()
@@ -134,7 +129,6 @@ class Dashboard(QWidget):
         self.file_display.setFixedHeight(150)
         main_layout.addWidget(self.file_display)
 
-    # --- UI Helpers ---
     def styled_button(self, text, color="#3A7AFE", hover="#2C5DC1", large=False):
         font_size = "11pt" if large else "10pt"
         padding = "10px" if large else "6px"
@@ -174,7 +168,6 @@ class Dashboard(QWidget):
         """)
         return frame
 
-    # --- Core Functionality ---
     def upload_files(self):
         files, _ = QFileDialog.getOpenFileNames(self, "Select Files", "", "All Files (*.trail *.pml *.out *.isf *.txt)")
         if not files:
@@ -298,7 +291,7 @@ class Dashboard(QWidget):
                 QMessageBox.critical(self, "Error", f"Failed to delete profile:\n{e}")
 
     def update_profile_menu(self):
-        pass  # You can add updates here later
+        pass
 
 
 if __name__ == "__main__":
