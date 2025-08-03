@@ -115,9 +115,8 @@ class Dashboard(QWidget):
         module_layout = QVBoxLayout(module_frame)
         rows = [
             [("Visualizer", "vizualizer_module.py"), ("Timeline", "timeline_evolved.py")],
-            [("MSC Maker", "msc_maker_80.py"), ("Overview", "overview.py")],
-            [("Out Viewer", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")],
-            [("3D State Graph", "3D_statespace_module.py")]
+            [("MSC Maker", "msc_maker_80.py"), ("3D State Graph", "3D_statespace_module.py")],
+            [("Out Viewer", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")]
         ]
         for row in rows:
             row_layout = QHBoxLayout()
