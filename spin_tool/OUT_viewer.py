@@ -3,9 +3,13 @@ import os
 import re
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit,
-    QPushButton, QScrollArea, QGroupBox, QHBoxLayout, QMessageBox
+    QPushButton, QScrollArea, QGroupBox, QHBoxLayout,
+    QGraphicsView, QGraphicsScene, QGraphicsTextItem,
+    QGraphicsRectItem
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QBrush, QPen, QColor
+from PyQt6.QtCore import Qt, QRectF
+
 
 def parse_spin_output(file_path):
     data = {
@@ -84,6 +88,7 @@ def parse_spin_output(file_path):
 
     return data
 
+
 def find_out_file(directory):
     try:
         for filename in os.listdir(directory):
@@ -92,6 +97,7 @@ def find_out_file(directory):
     except FileNotFoundError:
         pass
     return None
+
 
 class ExpandableSection(QGroupBox):
     def __init__(self, title, content_text):
@@ -105,7 +111,7 @@ class ExpandableSection(QGroupBox):
         self.text_area.setReadOnly(True)
         self.text_area.setPlainText(content_text)
         self.text_area.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-        self.text_area.setMaximumHeight(150)  
+        self.text_area.setMaximumHeight(150)
 
         layout.addWidget(self.text_area)
         self.setLayout(layout)
@@ -116,11 +122,12 @@ class ExpandableSection(QGroupBox):
     def toggle_content(self, checked):
         self.text_area.setVisible(checked)
 
+
 class SpinOutViewer(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("SPIN .out File Viewer")
-        self.resize(800, 600)
+        self.resize(1000, 700)
 
         main_layout = QVBoxLayout()
 
@@ -139,19 +146,12 @@ class SpinOutViewer(QWidget):
             main_layout.addWidget(msg)
         else:
             parsed_data = parse_spin_output(out_file)
-
-            
             self.sections = {}
-
             sections_data = {}
 
-            
             sections_data["Compilation Commands"] = "\n".join(parsed_data["Compilation Commands"]) or "None"
-
-            
             sections_data["Settings Used"] = "\n".join(parsed_data["Settings Used"]) or "None"
 
-            
             if parsed_data["Verification Checks"]:
                 checks_lines = []
                 for k, v in parsed_data["Verification Checks"].items():
@@ -161,7 +161,6 @@ class SpinOutViewer(QWidget):
             else:
                 sections_data["Verification Checks"] = "None"
 
-            
             if parsed_data["Statespace Stats"]:
                 stats_lines = []
                 for k, v in parsed_data["Statespace Stats"].items():
@@ -170,7 +169,6 @@ class SpinOutViewer(QWidget):
             else:
                 sections_data["Statespace Stats"] = "None"
 
-            
             if parsed_data["Memory Usage"]:
                 mem_lines = []
                 for k, v in parsed_data["Memory Usage"].items():
@@ -179,13 +177,8 @@ class SpinOutViewer(QWidget):
             else:
                 sections_data["Memory Usage"] = "None"
 
-            
             sections_data["Unreached Code"] = "\n".join(parsed_data["Unreached Code"]) or "None"
-
-            
             sections_data["Elapsed Time"] = parsed_data["Elapsed Time"] or "Unknown"
-
-            
             sections_data["Final Status"] = parsed_data["Final Status"] or "Unknown"
 
             scroll = QScrollArea()
@@ -198,11 +191,34 @@ class SpinOutViewer(QWidget):
                 self.sections[title] = section
                 content_layout.addWidget(section)
 
+            # ----- Charts Side-by-Side -----
+            if parsed_data["Memory Usage"] or parsed_data["Statespace Stats"]:
+                chart_layout = QHBoxLayout()
+
+                if parsed_data["Memory Usage"]:
+                    pie_view = QGraphicsView()
+                    pie_scene = QGraphicsScene()
+                    pie_view.setScene(pie_scene)
+                    self.draw_piechart(pie_scene, parsed_data["Memory Usage"], 150, 150, 100)
+                    chart_layout.addWidget(pie_view)
+
+                if parsed_data["Statespace Stats"]:
+                    bar_view = QGraphicsView()
+                    bar_scene = QGraphicsScene()
+                    bar_view.setScene(bar_scene)
+                    self.draw_barchart(bar_scene, parsed_data["Statespace Stats"])
+                    chart_layout.addWidget(bar_view)
+
+                chart_container = QWidget()
+                chart_container.setLayout(chart_layout)
+                content_layout.addWidget(QLabel("Visualizations:"))
+                content_layout.addWidget(chart_container)
+            # -------------------------------
+
             content_widget.setLayout(content_layout)
             scroll.setWidget(content_widget)
             main_layout.addWidget(scroll)
 
-            
             self.open_all_btn.clicked.connect(self.open_all)
             self.close_all_btn.clicked.connect(self.close_all)
 
@@ -216,11 +232,72 @@ class SpinOutViewer(QWidget):
         for section in self.sections.values():
             section.setChecked(False)
 
+    def draw_piechart(self, scene, memory_dict, center_x, center_y, radius):
+        total = sum(memory_dict.values())
+        if total == 0:
+            return
+
+        start_angle = 0
+        colors = ["#c44", "#4c4", "#44c", "#cc4", "#4cc", "#c4c"]
+        for i, (key, value) in enumerate(memory_dict.items()):
+            angle_span = 360 * (value / total)
+            slice_item = scene.addEllipse(
+                QRectF(center_x - radius, center_y - radius, radius * 2, radius * 2),
+                QPen(Qt.GlobalColor.black),
+                QBrush(QColor(colors[i % len(colors)]))
+            )
+            slice_item.setStartAngle(int(start_angle * 16))
+            slice_item.setSpanAngle(int(angle_span * 16))
+
+            label = QGraphicsTextItem(f"{key}: {value:.1f}")
+            label.setPos(center_x + radius + 20, center_y - radius + i * 20)
+            scene.addItem(label)
+
+            start_angle += angle_span
+
+    def draw_barchart(self, scene, stats, start_x=50, start_y=300, max_height=200):
+        scene.clear()  # prevent overlap
+        bar_width = 40
+        spacing = 30
+        max_value = max(stats.values()) if stats else 1
+        scale = max_height / max_value if max_value != 0 else 1
+
+        label_aliases = {
+            "state_vector_size": "VecSize",
+            "depth_reached": "Depth",
+            "errors": "Errors",
+            "states_stored": "Stored",
+            "states_visited": "Visited",
+            "states_matched": "Matched",
+            "transitions": "Trans",
+            "atomic_steps": "Atomic",
+            "hash_conflicts": "Conflicts"
+        }
+
+        x = start_x
+        for i, (label, value) in enumerate(stats.items()):
+            height = value * scale
+            rect = QGraphicsRectItem(x, start_y - height, bar_width, height)
+            rect.setBrush(QBrush(QColor("#5a9")))
+            rect.setPen(QPen(Qt.GlobalColor.black))
+            scene.addItem(rect)
+
+            short_label = label_aliases.get(label, label)
+            label_item = QGraphicsTextItem(f"{short_label}\n{value}")
+            label_item.setPos(x - 5, start_y + 5)
+            label_item.setTextWidth(bar_width + 10)
+            scene.addItem(label_item)
+
+            x += bar_width + spacing
+
+
+
 def main():
     app = QApplication(sys.argv)
     viewer = SpinOutViewer()
     viewer.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
