@@ -11,10 +11,54 @@ with open(parsed_data_path, "r") as f:
     data = json.load(f)
 
 trail_data = data["trail"]
+trail_data.sort(key=lambda x: x['step'])  
 
-process_names = sorted(set(step['proc_name'] for step in trail_data))
+G = nx.DiGraph()
+step_to_node = {}
+proc_spawn_depth = {}  
+parent_map = {}        
+
+for i, step in enumerate(trail_data):
+    sid = f"s{step['step']}"
+    proc_id = step['proc_id']
+    proc = step['proc_name']
+    label = f"P{proc_id}@{step['line']}"
+
+    if proc_id not in proc_spawn_depth:
+        if i > 0:
+            prev_proc_id = trail_data[i - 1]['proc_id']
+            parent_map[proc_id] = prev_proc_id
+            proc_spawn_depth[proc_id] = proc_spawn_depth.get(prev_proc_id, 0) + 1
+        else:
+            proc_spawn_depth[proc_id] = 0  # root
+
+    step_to_node[step['step']] = {
+        'sid': sid,
+        'proc': proc,
+        'label': label,
+        'step': step['step'],
+        'depth': proc_spawn_depth[proc_id],
+    }
+    G.add_node(sid, **step_to_node[step['step']])
+
+for i in range(1, len(trail_data)):
+    prev_step = trail_data[i - 1]['step']
+    curr_step = trail_data[i]['step']
+    G.add_edge(f"s{prev_step}", f"s{curr_step}")
+
+processed_trail = []
+for sid in sorted(G.nodes, key=lambda x: G.nodes[x]['step']):
+    node = G.nodes[sid]
+    processed_trail.append({
+        'sid': sid,
+        'step': node['step'],
+        'depth': node['depth'],
+        'proc': node['proc'],
+        'label': node['label'],
+    })
+
+process_names = sorted(set(node['proc'] for node in processed_trail))
 proc_to_z = {proc: i for i, proc in enumerate(process_names)}
-
 palette = [
     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
     "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
@@ -22,39 +66,25 @@ palette = [
 ]
 proc_color_map = {proc: palette[i % len(palette)] for i, proc in enumerate(process_names)}
 
-G = nx.DiGraph()
-for step in trail_data:
-    sid = f"s{step['step']}"
-    label = f"P{step['proc_id']}@{step['line']}"
-    depth = step.get('depth', 0)
-    G.add_node(sid, label=label, proc=step['proc_name'], step=step['step'], depth=depth)
-
-for i in range(1, len(trail_data)):
-    prev_sid = f"s{trail_data[i - 1]['step']}"
-    curr_sid = f"s{trail_data[i]['step']}"
-    G.add_edge(prev_sid, curr_sid)
-
 node_traces = []
-edge_traces = []
-
-first_step = min(step['step'] for step in trail_data)
-last_step = max(step['step'] for step in trail_data)
+first_step = min(node['step'] for node in processed_trail)
+last_step = max(node['step'] for node in processed_trail)
 
 for proc in process_names:
     x, y, z = [], [], []
     text, hovertext, color, marker_size = [], [], [], []
     
-    for node, attrs in G.nodes(data=True):
-        if attrs['proc'] != proc:
+    for node in processed_trail:
+        if node['proc'] != proc:
             continue
-        step = attrs['step']
-        depth = attrs['depth']
+        step = node['step']
+        depth = node['depth']
         z_val = proc_to_z[proc]
-
+        
         x.append(step)
         y.append(depth)
         z.append(z_val)
-        hovertext.append(f"Step {step} | Proc: {proc} | Depth: {depth} | Label: {attrs['label']}")
+        hovertext.append(f"Step {step} | Proc: {proc} | Depth: {depth} | Label: {node['label']}")
         marker_size.append(12 if step in (first_step, last_step) else 8)
         text.append("START" if step == first_step else "END" if step == last_step else "")
         color.append(proc_color_map[proc])
@@ -69,7 +99,7 @@ for proc in process_names:
         hoverinfo="text",
         textposition="top center",
         textfont=dict(size=12, color="black"),
-        visible=True  # Start with all visible
+        visible=True
     ))
 
 edge_x, edge_y, edge_z = [], [], []
@@ -86,14 +116,14 @@ edge_trace = go.Scatter3d(
     name="Edges",
     visible=True
 )
-edge_traces.append(edge_trace)
+edge_traces = [edge_trace]
 
 dropdown_buttons = [
     {
         "label": "All Processes",
         "method": "update",
         "args": [
-            {"visible": [True] * (len(node_traces) + 1)},  # all nodes + edges
+            {"visible": [True] * (len(node_traces) + 1)},
             {"title": "All Processes"}
         ]
     }
@@ -101,8 +131,8 @@ dropdown_buttons = [
 
 for i, proc in enumerate(process_names):
     visibility = [False] * (len(node_traces) + 1)
-    visibility[i] = True  # show only this process' nodes
-    visibility[-1] = True  # always show edges
+    visibility[i] = True
+    visibility[-1] = True
     dropdown_buttons.append({
         "label": proc,
         "method": "update",
