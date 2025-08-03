@@ -5,9 +5,9 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit,
     QPushButton, QScrollArea, QGroupBox, QHBoxLayout,
     QGraphicsView, QGraphicsScene, QGraphicsTextItem,
-    QGraphicsRectItem, QSplitter
+    QGraphicsRectItem, QFrame, QSplitter
 )
-from PyQt6.QtGui import QBrush, QPen, QColor, QFont
+from PyQt6.QtGui import QBrush, QPen, QColor
 from PyQt6.QtCore import Qt, QRectF
 
 
@@ -112,7 +112,7 @@ class ExpandableSection(QGroupBox):
         self.text_area.setPlainText(content_text)
         self.text_area.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         self.text_area.setMaximumHeight(150)
-        self.text_area.setStyleSheet("background-color: #f9f9f9; border: 1px solid #ccc;")
+
         layout.addWidget(self.text_area)
         self.setLayout(layout)
 
@@ -129,33 +129,83 @@ class SpinOutViewer(QWidget):
         self.setWindowTitle("SPIN .out File Viewer")
         self.resize(1000, 700)
 
+        app.setStyleSheet("""
+            QWidget {
+                background-color: #f9f9fc;
+                font-family: "Segoe UI";
+                font-size: 10pt;
+                color: #333;
+            }
+
+            QPushButton {
+                background-color: #4285F4;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+            }
+
+            QPushButton#ClearButton {
+                background-color: #DB4437;
+            }
+
+            QPushButton:hover {
+                background-color: #357ae8;
+            }
+
+            QPushButton#ClearButton:hover {
+                background-color: #c23321;
+            }
+
+            QGroupBox {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                margin-top: 10px;
+            }
+
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+                background: transparent;
+            }
+
+            QTextEdit {
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 4px;
+                background-color: #fff;
+            }
+
+            QLabel {
+                font-weight: bold;
+                margin: 10px 0 5px 0;
+            }
+
+            QScrollArea {
+                border: none;
+            }
+        """)
+
         main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(10)
 
         btn_layout = QHBoxLayout()
         self.open_all_btn = QPushButton("Open All")
+        self.open_all_btn.setObjectName("OpenAll")
         self.close_all_btn = QPushButton("Close All")
-        btn_layout.addStretch()
+        self.close_all_btn.setObjectName("CloseAll")
         btn_layout.addWidget(self.open_all_btn)
         btn_layout.addWidget(self.close_all_btn)
-        btn_layout.addStretch()
         main_layout.addLayout(btn_layout)
 
         data_folder = os.path.join(os.getcwd(), "data")
         out_file = find_out_file(data_folder)
 
-        splitter = QSplitter(Qt.Orientation.Vertical)
-
-        # ----------- Textual Sections ------------
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        content_widget = QWidget()
-        content_layout = QVBoxLayout()
-        content_widget.setLayout(content_layout)
-        scroll.setWidget(content_widget)
-        splitter.addWidget(scroll)
-
         if not out_file:
-            content_layout.addWidget(QLabel("No .out file found in the 'data' folder."))
+            msg = QLabel("No .out file found in the 'data' folder.")
+            main_layout.addWidget(msg)
         else:
             parsed_data = parse_spin_output(out_file)
             self.sections = {}
@@ -193,41 +243,47 @@ class SpinOutViewer(QWidget):
             sections_data["Elapsed Time"] = parsed_data["Elapsed Time"] or "Unknown"
             sections_data["Final Status"] = parsed_data["Final Status"] or "Unknown"
 
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            content_widget = QWidget()
+            content_layout = QVBoxLayout()
+
             for title, text in sections_data.items():
                 section = ExpandableSection(title, text)
                 self.sections[title] = section
                 content_layout.addWidget(section)
 
-        # ----------- Visualizations ------------
-        chart_container = QWidget()
-        chart_layout = QHBoxLayout()
-        chart_layout.setContentsMargins(20, 10, 20, 10)
-        chart_container.setLayout(chart_layout)
+            # ----- Charts Side-by-Side -----
+            if parsed_data["Memory Usage"] or parsed_data["Statespace Stats"]:
+                chart_layout = QHBoxLayout()
 
-        if out_file and (parsed_data["Memory Usage"] or parsed_data["Statespace Stats"]):
-            if parsed_data["Memory Usage"]:
-                pie_view = QGraphicsView()
-                pie_scene = QGraphicsScene()
-                pie_view.setScene(pie_scene)
-                self.draw_piechart(pie_scene, parsed_data["Memory Usage"], 150, 150, 100)
-                pie_view.setMinimumWidth(400)
-                chart_layout.addWidget(pie_view)
+                if parsed_data["Memory Usage"]:
+                    pie_view = QGraphicsView()
+                    pie_scene = QGraphicsScene()
+                    pie_view.setScene(pie_scene)
+                    self.draw_piechart(pie_scene, parsed_data["Memory Usage"], 150, 150, 100)
+                    chart_layout.addWidget(pie_view)
 
-            if parsed_data["Statespace Stats"]:
-                bar_view = QGraphicsView()
-                bar_scene = QGraphicsScene()
-                bar_view.setScene(bar_scene)
-                self.draw_barchart(bar_scene, parsed_data["Statespace Stats"])
-                bar_view.setMinimumWidth(500)
-                chart_layout.addWidget(bar_view)
+                if parsed_data["Statespace Stats"]:
+                    bar_view = QGraphicsView()
+                    bar_scene = QGraphicsScene()
+                    bar_view.setScene(bar_scene)
+                    self.draw_barchart(bar_scene, parsed_data["Statespace Stats"])
+                    chart_layout.addWidget(bar_view)
 
-        splitter.addWidget(chart_container)
-        splitter.setSizes([600, 300])
+                chart_container = QWidget()
+                chart_container.setLayout(chart_layout)
+                content_layout.addWidget(QLabel("Visualizations:"))
+                content_layout.addWidget(chart_container)
+            # -------------------------------
 
-        main_layout.addWidget(splitter)
+            content_widget.setLayout(content_layout)
+            scroll.setWidget(content_widget)
+            main_layout.addWidget(scroll)
 
-        self.open_all_btn.clicked.connect(self.open_all)
-        self.close_all_btn.clicked.connect(self.close_all)
+            self.open_all_btn.clicked.connect(self.open_all)
+            self.close_all_btn.clicked.connect(self.close_all)
+
         self.setLayout(main_layout)
 
     def open_all(self):
@@ -256,7 +312,6 @@ class SpinOutViewer(QWidget):
             slice_item.setSpanAngle(int(angle_span * 16))
 
             label = QGraphicsTextItem(f"{key}: {value:.1f}")
-            label.setFont(QFont("Arial", 8))
             label.setPos(center_x + radius + 20, center_y - radius + i * 20)
             scene.addItem(label)
 
@@ -282,7 +337,7 @@ class SpinOutViewer(QWidget):
         }
 
         x = start_x
-        for label, value in stats.items():
+        for i, (label, value) in enumerate(stats.items()):
             height = value * scale
             rect = QGraphicsRectItem(x, start_y - height, bar_width, height)
             rect.setBrush(QBrush(QColor("#5a9")))
@@ -291,14 +346,15 @@ class SpinOutViewer(QWidget):
 
             short_label = label_aliases.get(label, label)
             label_item = QGraphicsTextItem(f"{short_label}\n{value}")
-            label_item.setFont(QFont("Arial", 8))
             label_item.setPos(x - 5, start_y + 5)
+            label_item.setTextWidth(bar_width + 10)
             scene.addItem(label_item)
 
             x += bar_width + spacing
 
 
 def main():
+    global app
     app = QApplication(sys.argv)
     viewer = SpinOutViewer()
     viewer.show()
