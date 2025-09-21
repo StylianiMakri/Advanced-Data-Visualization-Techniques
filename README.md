@@ -1,6 +1,6 @@
 # SPIN Visualizer Tool - Advanced Data Visualization and Explanation Techniques on Design and Verification Tools
 
-My diploma thesis, focused on visualising SPIN model checker outputs.
+*Visualising model checker SPIN outputs.*
 
 ## Project Overview 
 SPIN Visualizer is a desktop GUI application that transforms raw SPIN output files (.out, .trail, .isf) into interactive, visual representations. It allows users to quickly identify errors such as assertions, deadlocks, unmatched communications, and never claim violations. The tool bridges the gap between the difficult to read SPIN outputs and intuitive analysis by providing execution tables linking steps to PROMELA code, chronological timelines of process execution, interactive 3D state space graphs and easy to understand explanations of why a simulation failed. This project was built with [**Python**](https://www.python.org/), [**PyQt6**](https://pypi.org/project/PyQt6/) for the graphical user interface, [**Matplotlib**](https://matplotlib.org/) for timeline visualization, [**Plotly**](https://plotly.com/) for 3D state space visualization, [**NetworkX**](https://networkx.org/) for graph representations. 
