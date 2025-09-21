@@ -1,6 +1,6 @@
 import os
-import re
 import sys
+import json
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit,
     QMainWindow, QPushButton, QGraphicsView, QGraphicsScene,
@@ -9,50 +9,20 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QRectF
 from PyQt6.QtGui import QFont, QPen, QBrush, QColor, QWheelEvent, QPainter
 
+DATA_JSON = './output/parsed_data.json'
 DATA_DIR = './data'
 
 
-def find_files():
-    trail = txt = out = None
-    for f in os.listdir(DATA_DIR):
-        if f.endswith('.trail') and not trail:
-            trail = os.path.join(DATA_DIR, f)
-        elif f.endswith('.txt') and not txt:
-            txt = os.path.join(DATA_DIR, f)
-        elif f.endswith('.out') and not out:
-            out = os.path.join(DATA_DIR, f)
-    return trail, txt, out
-
-
-def parse_out(out_path):
-    with open(out_path, 'r') as f:
-        text = f.read()
-
-    errors = []
-
-    m = re.search(r'pan:\d+:\s+assertion violated \((.*?)\)', text)
-    if m:
-        condition = m.group(1).strip()
-        errors.append({'type': 'assert', 'line': None, 'condition': condition})
-
-    if "pan: deadlock detected" in text:
-        errors.append({'type': 'deadlock'})
-
-    if "invalid end state" in text:
-        m = re.search(r'invalid end state \(at depth (\d+)\)', text)
-        depth = int(m.group(1)) if m else None
-        errors.append({'type': 'invalid_end', 'depth': depth})
-
-    if "unmatched receive" in text or "invalid read of message" in text:
-        errors.append({'type': 'unmatched_comm'})
-
-    if "never claim violated" in text:
-        errors.append({'type': 'never_claim'})
-
-    return errors
+def load_parsed_json(json_path):
+    if not os.path.exists(json_path):
+        return None, None
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+    return data.get('trail', []), data.get('errors', [])
 
 
 def extract_simulation(txt_path):
+    """Exactly your original simulation extraction logic"""
     with open(txt_path, 'r') as f:
         lines = f.readlines()
     in_sim = False
@@ -66,18 +36,6 @@ def extract_simulation(txt_path):
         elif in_sim:
             sim_lines.append(line.rstrip('\n'))
     return sim_lines
-
-
-def parse_trail(trail_path):
-    transitions = []
-    with open(trail_path, 'r') as f:
-        for line in f:
-            parts = line.strip().split(':')
-            if len(parts) != 3 or any(int(p) < 0 for p in parts):
-                continue
-            step, proc, action = map(int, parts)
-            transitions.append((step, proc, action))
-    return transitions
 
 
 class TimelineWidget(QGraphicsView):
@@ -99,32 +57,39 @@ class TimelineWidget(QGraphicsView):
         y_spacing = 50
         dot_radius = 4
 
-        for _, proc, _ in transitions:
+        # Map proc_id to y positions
+        for t in transitions:
+            proc = t['proc_id']
             if proc not in y_map:
                 y_map[proc] = len(y_map)
 
-        max_step = max((step for step, _, _ in transitions), default=0)
+        max_step = max((t['step'] for t in transitions), default=0)
         max_x = max_step * 20 + 100
-        max_y = (len(y_map)) * y_spacing
+        max_y = len(y_map) * y_spacing
 
-        for step in range(0, max_step + 1, 5):  
+        # Vertical grid lines
+        for step in range(0, max_step + 1, 5):
             x = step * 20
             line = self.scene.addLine(x, -20, x, max_y, QPen(QColor("#dddddd")))
-            line.setZValue(-1) 
+            line.setZValue(-1)
 
+        # Horizontal process lines
         for _, y_index in y_map.items():
             y = y_index * y_spacing
             line = self.scene.addLine(-80, y, max_x, y, QPen(QColor("#ddddddd6")))
             line.setZValue(-1)
 
-        for idx, (step, proc, _) in enumerate(transitions, start=1):
+        # Draw timeline dots
+        for idx, t in enumerate(transitions, start=1):
+            step = t['step']
+            proc = t['proc_id']
             x = step * 20
             y = y_map[proc] * y_spacing
 
             is_last = idx == len(transitions)
             color = QColor("red") if is_last else QColor("blue")
 
-            dot = QGraphicsEllipseItem(QRectF(x - dot_radius, y - dot_radius, dot_radius * 3, dot_radius * 3))
+            dot = QGraphicsEllipseItem(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
             dot.setBrush(QBrush(color))
             dot.setPen(QPen(Qt.GlobalColor.black))
             self.scene.addItem(dot)
@@ -134,7 +99,7 @@ class TimelineWidget(QGraphicsView):
             label.setPos(x - 5, y - 20)
             self.scene.addItem(label)
 
-
+        # Process labels
         for proc, idx in y_map.items():
             label = QGraphicsTextItem(f"proc {proc}")
             label.setDefaultTextColor(Qt.GlobalColor.black)
@@ -143,7 +108,6 @@ class TimelineWidget(QGraphicsView):
 
         self.scene.setSceneRect(-80, -30, max_x + 150, max_y + 60)
 
-
     def wheelEvent(self, event: QWheelEvent):
         zoom = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
         self.scale(zoom, 1)
@@ -151,14 +115,14 @@ class TimelineWidget(QGraphicsView):
 
 class ErrorViewer(QMainWindow):
     EXPLANATIONS = {
-        'assert': "An assertion in the model was violated, indicating a serious correctness problem.",
+        'assertion violated': "An assertion in the model was violated, indicating a serious correctness problem.",
         'deadlock': "The system reached a deadlock where no process could proceed.",
-        'invalid_end': "The model ended in a state where not all processes were properly terminated.",
+        'invalid end state': "The model ended in a state where not all processes were properly terminated.",
         'unmatched_comm': "A send or receive had no matching partner, showing a communication issue.",
         'never_claim': "A never claim property was violated, breaking a specified safety/liveness condition."
     }
 
-    def __init__(self, errors, sim_lines, transitions):
+    def __init__(self, errors, trail, sim_lines):
         super().__init__()
         self.setWindowTitle("SPIN Error Viewer")
         self.setGeometry(100, 100, 900, 700)
@@ -172,31 +136,39 @@ class ErrorViewer(QMainWindow):
         title_font = QFont("Arial", 11, QFont.Weight.Bold)
         expl_font = QFont("Arial", 9)
 
+        # Display errors
         for error in errors:
-            err_title = {
-                'assert': f"❗ Assertion Failed: {error.get('condition', 'unknown')}",
+            err_type = error.get('type', 'unknown')
+            msg = error.get('message', '')
+            depth = error.get('depth')
+
+            title_text = {
+                'assertion violated': f"❗ Assertion Failed: {msg}",
                 'deadlock': "❗ Deadlock Detected",
-                'invalid_end': f"❗ Invalid End State (depth {error.get('depth', '?')})",
+                'invalid end state': f"❗ Invalid End State (depth {depth or '?'})",
                 'unmatched_comm': "❗ Unmatched Communication Detected",
                 'never_claim': "❗ Never Claim Violated"
-            }
-            title = QLabel(err_title.get(error['type'], 'Unknown Error'))
+            }.get(err_type, msg)
+
+            title = QLabel(title_text)
             title.setFont(title_font)
             title.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
             title.setStyleSheet("margin:0px; padding:0px; line-height:90%;")
             layout.addWidget(title)
 
-            expl = self.EXPLANATIONS.get(error['type'], "Unknown error.")
+            expl = self.EXPLANATIONS.get(err_type, "Unknown error.")
             expl_label = QLabel(expl)
             expl_label.setFont(expl_font)
             expl_label.setWordWrap(True)
             expl_label.setStyleSheet("margin:0px; padding:0px; line-height:90%; color: #444;")
             layout.addWidget(expl_label)
 
-        timeline = TimelineWidget(transitions)
+        # Timeline
+        timeline = TimelineWidget(trail)
         timeline.setMinimumHeight(200)
         layout.addWidget(timeline)
 
+        # Simulation trace
         self.toggle_button = QPushButton("Show Full Simulation Trace")
         self.toggle_button.setStyleSheet("margin:4px; padding:4px;")
         layout.addWidget(self.toggle_button)
@@ -209,13 +181,15 @@ class ErrorViewer(QMainWindow):
         self.sim_box.setStyleSheet("margin:0px; padding:2px;")
         layout.addWidget(self.sim_box)
 
-        self.toggle_button.clicked.connect(lambda: self.toggle_trace(sim_lines))
+        self.sim_lines = sim_lines
 
-    def toggle_trace(self, sim_lines):
+        self.toggle_button.clicked.connect(self.toggle_trace)
+
+    def toggle_trace(self):
         visible = self.sim_box.isVisible()
         if not visible:
             self.sim_box.clear()
-            self.sim_box.append("\n".join(sim_lines))
+            self.sim_box.append("\n".join(self.sim_lines))
         self.sim_box.setVisible(not visible)
         self.toggle_button.setText(
             "Hide Full Simulation Trace" if not visible else "Show Full Simulation Trace"
@@ -223,34 +197,29 @@ class ErrorViewer(QMainWindow):
 
 
 def main():
-    trail_file, txt_file, out_file = find_files()
+    trail, errors = load_parsed_json(DATA_JSON)
+
+    # Find txt file for simulation extraction
+    txt_files = [f for f in os.listdir(DATA_DIR) if f.endswith('.txt')]
+    if txt_files:
+        txt_path = os.path.join(DATA_DIR, txt_files[0])
+        sim_lines = extract_simulation(txt_path)
+    else:
+        sim_lines = []
+
     app = QApplication(sys.argv)
 
-    if not all([trail_file, txt_file, out_file]):
+    if not trail or not errors:
         win = QMainWindow()
-        win.setWindowTitle("Missing Files")
-        lbl = QLabel("Required .trail, .txt, or .out files not found in /data.")
+        win.setWindowTitle("Missing Data")
+        lbl = QLabel(f"Could not load data from {DATA_JSON}")
         lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         win.setCentralWidget(lbl)
         win.resize(500, 200)
         win.show()
         sys.exit(app.exec())
 
-    errors = parse_out(out_file)
-    if not errors:
-        win = QMainWindow()
-        win.setWindowTitle("No Known Error")
-        lbl = QLabel("No error (assertion, deadlock, etc.) found in .out file.")
-        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        win.setCentralWidget(lbl)
-        win.resize(500, 200)
-        win.show()
-        sys.exit(app.exec())
-
-    sim_lines = extract_simulation(txt_file)
-    transitions = parse_trail(trail_file)
-
-    win = ErrorViewer(errors, sim_lines, transitions)
+    win = ErrorViewer(errors, trail, sim_lines)
     win.show()
     sys.exit(app.exec())
 

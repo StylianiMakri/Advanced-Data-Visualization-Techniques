@@ -27,10 +27,6 @@ def parse_trail_file(trail_path):
 
 
 def parse_pan_out(pan_path):
-    """
-    Parse pan.out to extract detailed assertion failures, deadlocks, invalid end states, etc.
-    Returns a list of dicts with keys: type, message, step (optional), depth (optional).
-    """
     errors = []
     error_pattern = re.compile(
         r'^(.*?)(assertion violated|invalid end state|deadlock)(.*)$', re.IGNORECASE
@@ -144,7 +140,7 @@ def parse_msc_txt(txt_path):
 
     return proc_names, events
 
-def save_msc_json(proc_names, events, out_path="output/msc_data.json"):
+def save_msc_json(proc_names, events, out_path="output/sim_data.json"):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     abs_out_path = os.path.join(base_dir, out_path)
     os.makedirs(os.path.dirname(abs_out_path), exist_ok=True)
@@ -153,7 +149,7 @@ def save_msc_json(proc_names, events, out_path="output/msc_data.json"):
             "processes": proc_names,
             "events": events
         }, f, indent=2)
-    print(f"Saved MSC JSON data to {abs_out_path}")
+    print(f"Saved simulation JSON data to {abs_out_path}")
 
 
 

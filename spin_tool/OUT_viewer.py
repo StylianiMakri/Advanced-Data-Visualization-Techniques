@@ -253,7 +253,6 @@ class SpinOutViewer(QWidget):
                 self.sections[title] = section
                 content_layout.addWidget(section)
 
-            # ----- Charts Side-by-Side -----
             if parsed_data["Memory Usage"] or parsed_data["Statespace Stats"]:
                 chart_layout = QHBoxLayout()
 
@@ -275,7 +274,6 @@ class SpinOutViewer(QWidget):
                 chart_container.setLayout(chart_layout)
                 content_layout.addWidget(QLabel("Visualizations:"))
                 content_layout.addWidget(chart_container)
-            # -------------------------------
 
             content_widget.setLayout(content_layout)
             scroll.setWidget(content_widget)

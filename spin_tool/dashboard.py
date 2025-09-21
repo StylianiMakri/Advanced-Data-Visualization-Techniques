@@ -110,8 +110,8 @@ class Dashboard(QWidget):
         module_layout = QVBoxLayout(module_frame)
         rows = [
             [("Visualizer", "vizualizer_module.py"), ("Timeline", "timeline_evolved.py")],
-            [("MSC Maker", "msc_maker_80.py"), ("3D State Graph", "3D_statespace_module.py")],
-            [("Overview", "OUT_viewer.py"), ("Why it Failed", "why_it_failed.py")]
+            [("3D State Graph", "3D_statespace_module.py"), ("Why it Failed", "why_it_failed.py")],
+            [("Overview", "OUT_viewer.py")]
         ]
         for row in rows:
             row_layout = QHBoxLayout()
@@ -122,7 +122,6 @@ class Dashboard(QWidget):
             module_layout.addLayout(row_layout)
         main_layout.addWidget(module_frame)
 
-        # --- Data Files Display ---
         main_layout.addWidget(self.section_label("Files in /data:"))
         self.file_display = QTextEdit()
         self.file_display.setReadOnly(True)
@@ -197,7 +196,7 @@ class Dashboard(QWidget):
     def run_parsers(self):
         try:
             self.run_script("parser_module.py")
-            self.run_script("parser_msc.py")
+            self.run_script("parser_sim.py")
         except Exception as e:
             QMessageBox.critical(self, "Parser Error", str(e))
 
