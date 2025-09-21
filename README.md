@@ -3,7 +3,7 @@
 My diploma thesis, focused on visualising SPIN model checker outputs.
 
 ## Project Overview 
-SPIN Visualizer is a desktop GUI application that transforms raw SPIN output files (.out, .trail, .isf) into interactive, visual representations. It allows users to quickly identify errors such as assertions, deadlocks, unmatched communications, and never claim violations. The tool bridges the gap between the difficult to read SPIN outputs and intuitive analysis by providing execution tables linking steps to PROMELA code, chronological timelines of process execution, interactive 3D state space graphs and easy to understand explanations of why a simulation failed. This project was built with **Python**, **PyQt6** for the graphical user interface, **Matplotlib** for timeline visualization, **Plotly** for 3D state space visualization, **NetworkX** for graph representations. 
+SPIN Visualizer is a desktop GUI application that transforms raw SPIN output files (.out, .trail, .isf) into interactive, visual representations. It allows users to quickly identify errors such as assertions, deadlocks, unmatched communications, and never claim violations. The tool bridges the gap between the difficult to read SPIN outputs and intuitive analysis by providing execution tables linking steps to PROMELA code, chronological timelines of process execution, interactive 3D state space graphs and easy to understand explanations of why a simulation failed. This project was built with [**Python**](https://www.python.org/), [**PyQt6**](https://pypi.org/project/PyQt6/) for the graphical user interface, [**Matplotlib**](https://matplotlib.org/) for timeline visualization, [**Plotly**](https://plotly.com/) for 3D state space visualization, [**NetworkX**](https://networkx.org/) for graph representations. 
 
 ## Features
 
@@ -65,7 +65,7 @@ SPIN Visualizer is a desktop GUI application that transforms raw SPIN output fil
 1. Navigate to the project directory in your system in cmd
 2. Run the application:
     - python dashboard.py
-3. Use the Dashboard to load SPIN files. Two example system models with all relevant files can be found in "examples" folder
+3. Use the Dashboard to load SPIN files. Two example system models with all relevant files can be found in [examples](spin_tool/examples/) folder
 4. Run the Parser
 5. Select Analysis Modules
 6. Optionally, create or delete model profiles for easier and faster analysis
