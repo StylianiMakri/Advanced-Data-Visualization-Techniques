@@ -19,7 +19,9 @@ SPIN Visualizer is a desktop GUI application that transforms raw SPIN output fil
 ### **Details**:
 
 - **User Dashboard & File Parsing**:
+
 <img src="spin_tool/screenshots/dashboard.png" alt="Dashboard" width="500px"/>
+
   - Centralized dashboard for file selection, clearing data, and running modules.  
   - Allows creation, deletion and loading of "model profiles" containing sets of SPIN files for quick analysis.
   - Supports `.out`, `.trail`, `.pml`, and `.isf` files. 
@@ -27,15 +29,19 @@ SPIN Visualizer is a desktop GUI application that transforms raw SPIN output fil
   - Converts all parsed data into `parsed_data.json`, creating a flexible bridge between the parser and visualization modules.
 
 
-- **Visualizer Module**:
+- **Visualizer Module**
+  
 <img src="spin_tool/screenshots/visualiser.png" alt="Visualizer" width="400px"/>
+
   - Presents execution in a detailed table with step number, process, code line, action performed, and the corresponding PML code.  
   - Users can search, filter, and export data to Excel (`.xlsx`) or HTML.  
   - Highlights errors detected during SPIN analysis, providing quick access to assertion violations, deadlocks, and unmatched communications.
 
 
 - **Timeline Module**:
+
 <img src="spin_tool/screenshots/timeline.png" alt="Timeline" width="400px"/>
+
   - Displays a chronological execution timeline with each process as a separate row.  
   - Marks steps in order, making it easier to detect bottlenecks and interactions between processes.
 
@@ -47,13 +53,17 @@ SPIN Visualizer is a desktop GUI application that transforms raw SPIN output fil
 
 
 - **Why It Failed Module**:
+  
 <img src="spin_tool/screenshots/whyitfailed.png" alt="Why It Failed" width="400px"/>
+
   - Provides a clear timeline of transitions with explanatory messages for assertions, deadlocks, unmatched communications, or never claim violations.  
   - Displays the full simulation trace for in-depth investigation of each step.
 
 
 - **Overview Module**:
+  
 <img src="spin_tool/screenshots/overview.png" alt="Overview" width="400px"/>
+
   - Summarizes SPIN verification results, including compilation commands, verification settings, state space information, and resource usage.  
   - Offers customizable views and clear visual charts for quick understanding of verification outcomes.
 
