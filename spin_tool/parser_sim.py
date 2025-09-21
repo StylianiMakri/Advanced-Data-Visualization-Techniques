@@ -61,29 +61,25 @@ def parse_simulation_events(sim_lines, channel_map={'f': '2', 'you': '4'}):
 
     return events
 
-def save_events_to_json(events, output_path):
-    """Save list of (process, action) to JSON"""
+def save_sim_data(events, output_path="output/sim_data.json"):
+    sim_dict = [{"process": proc, "action": action} for proc, action in events]
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
-        json.dump(events, f, indent=2)
+        json.dump(sim_dict, f, indent=2)
 
 def process_single_txt_in_data(channel_map={'f': '2', 'you': '4'}):
     data_dir = "data"
-    output_dir = "output"
 
     txt_files = [f for f in os.listdir(data_dir) if f.endswith(".txt")]
     if len(txt_files) != 1:
         raise ValueError(f"Expected exactly one .txt file in /data/, found {len(txt_files)}")
 
     filename = txt_files[0]
-    model_name = filename[:-4]
-
     input_path = os.path.join(data_dir, filename)
-    output_path = os.path.join(output_dir, f"{model_name}_events.json")
 
     sim_lines = extract_simulation_block(input_path)
     events = parse_simulation_events(sim_lines, channel_map)
-    save_events_to_json(events, output_path)
-    print(f"Extracted {len(events)} events from {filename} → {output_path}")
+    save_sim_data(events)
 
 if __name__ == "__main__":
     process_single_txt_in_data()
