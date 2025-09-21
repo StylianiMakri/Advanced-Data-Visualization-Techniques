@@ -1,29 +1,29 @@
 # SPIN Visualizer Tool - Advanced Data Visualization and Explanation Techniques on Design and Verification Tools
 
-My diploma thesis, focused on visualising SPIN model checker outputs, turning raw output files (.out, .trail, .isf) into interactive and understandable visualizations.
+My diploma thesis, focused on visualising SPIN model checker outputs.
 
 ## Project Overview 
-SPIN Visualizer is a desktop GUI application that transforms SPIN outputs into interactive, visual representations.  
-It allows users to quickly identify errors such as assertions, deadlocks, unmatched communications, and never claim violations.The tool bridges the gap between raw SPIN outputs and intuitive analysis by providing execution tables linking steps to PROMELA code, chronological timelines of process execution, interactive 3D state space graphs and easy to understand explanations of why a simulation failed. This project was built with **Python**, **PyQt6** for the graphical user interface, **Matplotlob** for timeline visualization, **Plotly** for 3D state space visualization, **NetworkX** for graph representations. 
+SPIN Visualizer is a desktop GUI application that transforms raw SPIN output files (.out, .trail, .isf) into interactive, visual representations. It allows users to quickly identify errors such as assertions, deadlocks, unmatched communications, and never claim violations. The tool bridges the gap between the difficult to read SPIN outputs and intuitive analysis by providing execution tables linking steps to PROMELA code, chronological timelines of process execution, interactive 3D state space graphs and easy to understand explanations of why a simulation failed. This project was built with **Python**, **PyQt6** for the graphical user interface, **Matplotlib** for timeline visualization, **Plotly** for 3D state space visualization, **NetworkX** for graph representations. 
 
 ## Features
 
 ### **Users can:**
 
--Load SPIN output files and parse them into JSON
--View execution steps in a table with code line references
--Explore chronological timelines of processes
--Visualize the 3D state space of the simulation
--Understand errors through the Why It Failed module
--Get a quick overview of verification results with the Overview module
+ - Load SPIN output files and parse them into JSON
+ - View execution steps in a table with code line references
+ - Explore chronological timelines of processes
+ - Visualize the 3D state space of the simulation
+ - Understand errors and why they occured
+ - Get a quick overview of verification results
 
 ### **Usage**:
 - **User Dashboard & Profile Management**:  
   - Centralized dashboard for file selection, clearing data, and running modules.  
   - Allows creation, deletion and loading of "model profiles" containing sets of SPIN files for quick analysis. 
-  - Fully supports selection, uploading, clearing, and saving of input and created files.
 
-- **File Parsing** : Supports `.out`, `.trail`, `.pml`, and `.isf` files. Extracts execution steps, process IDs, model line numbers, actions, and critical information such as assertions, deadlocks, invalid end states, execution depth, and memory usage. Converts all parsed data into `parsed_data.json`, creating a flexible bridge between the parser and visualization modules.
+- **File Parsing** : Supports `.out`, `.trail`, `.pml`, and `.isf` files. 
+    - Extracts execution steps, process IDs, model line numbers, actions, and critical information such as assertions, deadlocks, invalid end states, execution depth, and memory usage. 
+    - Converts all parsed data into `parsed_data.json`, creating a flexible bridge between the parser and visualization modules.
 
 - **Visualizer Module**:  
   - Presents execution in a detailed table with step number, process, code line, action performed, and the corresponding PML code.  
@@ -46,21 +46,17 @@ It allows users to quickly identify errors such as assertions, deadlocks, unmatc
   - Summarizes SPIN verification results, including compilation commands, verification settings, state space information, and resource usage.  
   - Offers customizable views and clear visual charts for quick understanding of verification outcomes.
 
-- **User Dashboard & Profile Management**:  
-  - Centralized dashboard for file selection, clearing data, and running modules.  
-  - Allows creation, deletion and loading of "model profiles" containing sets of SPIN files for quick analysis. 
-  - Fully supports selection, uploading, clearing, and saving of input and created files.  
 
 ## Instructions
 
 ### Requirements:
 1. Python 3.10+ installed on your system.
 2. Python packages (install via pip):
-   -pyqt6
-   -matplotlib
-   -plotly
-   -networkx
-   -openpyxl
+    - pyqt6
+    - matplotlib
+    - plotly
+    - networkx
+    - openpyxl
 
 ### Installation:
 1. Clone the repository
@@ -68,7 +64,7 @@ It allows users to quickly identify errors such as assertions, deadlocks, unmatc
 ### How to Run:
 1. Navigate to the project directory in your system in cmd
 2. Run the application:
-   python dashboard.py
+    - python dashboard.py
 3. Use the Dashboard to load SPIN files. Two example system models with all relevant files can be found in "examples" folder
 4. Run the Parser
 5. Select Analysis Modules
