@@ -7,7 +7,7 @@ SPIN Visualizer is a desktop GUI application that transforms raw SPIN output fil
 
 ## Features
 
-### **Users can:**
+### **Users can**
 
  - Load SPIN output files and parse them into JSON
  - View execution steps in a table with code line references
@@ -16,7 +16,9 @@ SPIN Visualizer is a desktop GUI application that transforms raw SPIN output fil
  - Understand errors and why they occured
  - Get a quick overview of verification results
 
-### **Usage**:
+### **Details**:
+
+![Dashboard](spin_tool/screenshots/dashboard.png)
 - **User Dashboard & Profile Management**:  
   - Centralized dashboard for file selection, clearing data, and running modules.  
   - Allows creation, deletion and loading of "model profiles" containing sets of SPIN files for quick analysis. 
@@ -25,23 +27,28 @@ SPIN Visualizer is a desktop GUI application that transforms raw SPIN output fil
     - Extracts execution steps, process IDs, model line numbers, actions, and critical information such as assertions, deadlocks, invalid end states, execution depth, and memory usage. 
     - Converts all parsed data into `parsed_data.json`, creating a flexible bridge between the parser and visualization modules.
 
+![Visualizer](spin_tool/screenshots/visualiser.png)
 - **Visualizer Module**:  
   - Presents execution in a detailed table with step number, process, code line, action performed, and the corresponding PML code.  
   - Users can search, filter, and export data to Excel (`.xlsx`) or HTML.  
   - Highlights errors detected during SPIN analysis, providing quick access to assertion violations, deadlocks, and unmatched communications.
 
+![Timeline](spin_tool/screenshots/timeline.png)
 - **Timeline Module**:  
   - Displays a chronological execution timeline with each process as a separate row.  
   - Marks steps in order, making it easier to detect bottlenecks and interactions between processes.
 
+![3D](spin_tool/screenshots/3dd.png)
 - **3D State Graph Module**:  
   - Generates a 3D visualization of the execution state space using NetworkX and Plotly.  
   - Nodes represent execution steps, edges represent transitions, allowing interactive exploration of the system behavior.
 
+![WhyitFailed](spin_tool/screenshots/whyitfailed.png)
 - **Why It Failed Module**:  
   - Provides a clear timeline of transitions with explanatory messages for assertions, deadlocks, unmatched communications, or never claim violations.  
   - Displays the full simulation trace for in-depth investigation of each step.
 
+![overview](spin_tool/screenshots/overview.png)
 - **Overview Module**:  
   - Summarizes SPIN verification results, including compilation commands, verification settings, state space information, and resource usage.  
   - Offers customizable views and clear visual charts for quick understanding of verification outcomes.
