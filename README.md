@@ -1,9 +1,18 @@
-requirements:  
-Python 3.9+ , PyQt6 (pip install PyQt6)
+#SPIN Visualizer Tool - Advanced Data Visualization and Explanation Techniques on Design and Verification Tools
 
-run:
-python dashboard.py
+My diploma thesis, focused on visualising **SPIN model checker outputs**, turning raw output files (.out, .trail, .isf) into interactive and understandable visualizations.
 
-1:upload files > select specified files
-2:Run parser 
-3:open modules
+--- 
+
+##Project Overview
+The tool allows users to:
+
+-Quickly identify errors (assertion violations, deadlocks, invalid end states etc)
+-Track execution flow of processes via timeline and 3D state space graphs
+-View errors in an understandable way
+-Link execution steps to PROMELA code lines
+-Export analysis results to Excel or HTML
+
+---
+
+##Features
