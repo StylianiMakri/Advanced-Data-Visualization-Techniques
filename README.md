@@ -18,7 +18,7 @@ SPIN Visualizer is a desktop GUI application that transforms raw SPIN output fil
 
 ### **Details**:
 
-![Dashboard](spin_tool/screenshots/dashboard.png)
+<img src="spin_tool/screenshots/dashboard.png" alt="Dashboard" width="75%"/>
 - **User Dashboard & Profile Management**:  
   - Centralized dashboard for file selection, clearing data, and running modules.  
   - Allows creation, deletion and loading of "model profiles" containing sets of SPIN files for quick analysis. 
